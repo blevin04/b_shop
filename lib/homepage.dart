@@ -65,8 +65,7 @@ class _HomepageState extends State<Homepage> {
               themestate((){
                 darkmode = !darkmode;
               });
-              
-                      }, icon: Icon(darkmode?Icons.dark_mode: Icons.sunny));
+             }, icon: Icon(darkmode?Icons.dark_mode: Icons.sunny));
             }
           )],
         //toolbarHeight: 30,
@@ -207,7 +206,7 @@ Widget cart(BuildContext context){
     child: Column(
       children: [
         ListTile(
-          leading: CircleAvatar(
+          leading:const CircleAvatar(
             radius: 30,
           ),
           title:const Text("User Name",style: TextStyle(fontWeight: FontWeight.bold),),
