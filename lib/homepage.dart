@@ -2,6 +2,7 @@ import 'package:b_shop/checkOut.dart';
 import 'package:b_shop/main.dart';
 import 'package:b_shop/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -46,7 +47,13 @@ class _HomepageState extends State<Homepage> {
         ),
       ),
       floatingActionButton: 
-      IconButton(onPressed: (){}, 
+      IconButton(onPressed: ()async{
+        final Uri _phoneUri = Uri(
+      scheme: "tel",
+      path: "0792006050"
+  );
+  await launchUrl(_phoneUri);
+      }, 
       icon:const CircleAvatar(
         radius: 20,
         child: Padding(
