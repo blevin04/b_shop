@@ -7,6 +7,9 @@ class Checkout extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var total = 0;
+    items.forEach((key,value){
+      total += value as int;
+    });
     return Scaffold(
       appBar: AppBar(
         title:const Text("Check Out"),
@@ -20,9 +23,7 @@ class Checkout extends StatelessWidget {
                 itemCount: items.length,
                 itemBuilder: (BuildContext context, int index) {
                   
-                  items.forEach((key,value){
-                    total += value as int;
-                  });
+                  print("total: $total");
                   return ListTile(
                     title:Text (items.keys.toList()[index].toString()),
                     subtitle: Text("X1"),
@@ -33,7 +34,7 @@ class Checkout extends StatelessWidget {
             ),
             Row(
               children: [
-               const Text("Total:",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 14),),
+               const Text("Total:  ",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 14),),
                 Text("KSH ${total.toString()}")
               ],
             ),
@@ -56,6 +57,7 @@ class Checkout extends StatelessWidget {
                   ),
                 ),
                 const Tooltip(
+                  triggerMode: TooltipTriggerMode.tap,
                   message: "Mpesa Number to be charged",
                   child: Icon(Icons.help_outline),
                 )

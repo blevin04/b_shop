@@ -14,6 +14,8 @@ int current_screen = 0;
 List categories = [
   "Gas",
   "Cerials",
+  "Food Stuffs",
+  "Electronics",
   "Floar",
   "other",
 ];
@@ -81,6 +83,7 @@ class _HomepageState extends State<Homepage> {
       body:current_screen==0? home():
       current_screen == 1?search():cart(context),
       bottomNavigationBar: BottomAppBar(
+        height: 60,
         color: Colors.transparent,
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -216,9 +219,11 @@ Widget cart(BuildContext context){
           leading:const CircleAvatar(
             radius: 30,
           ),
-          title:const Text("User Name",style: TextStyle(fontWeight: FontWeight.bold),),
+          title:const Text("Customer Name",style: TextStyle(fontWeight: FontWeight.bold),),
           subtitle:const Text("My Cart"),
-          trailing: IconButton(onPressed: (){}, icon:const Icon(Icons.edit)),
+          trailing: IconButton(onPressed: (){
+
+          }, icon:const Icon(Icons.edit)),
         ),
        const Divider(),
        Container(
