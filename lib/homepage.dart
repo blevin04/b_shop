@@ -95,7 +95,7 @@ class _HomepageState extends State<Homepage> {
               setState(() {
                 current_screen = 0;
               });
-            }, icon:   Icon(Icons.home,size: 30,color: current_screen==0?Colors.blue:null,)),
+            }, icon: Icon(Icons.home,size: 30,color: current_screen==0?Colors.blue:null,)),
             IconButton(onPressed: (){
               setState(() {
                 current_screen = 1;
@@ -105,10 +105,7 @@ class _HomepageState extends State<Homepage> {
               setState(() {
                 current_screen = 2;
               });
-            }, icon:Padding(
-              padding: const EdgeInsets.all(8.0),
-              child:  Icon(Icons.shopping_cart,size: 30,color: current_screen==2?Colors.blue:null,),
-            ))
+            }, icon:Icon(Icons.shopping_cart,size: 30,color: current_screen==2?Colors.blue:null,))
           ],
         ),
       ),
