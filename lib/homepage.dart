@@ -53,11 +53,21 @@ class _HomepageState extends State<Homepage> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Center(child: CircleAvatar(radius: MediaQuery.of(context).size.width/5,),),
-            const Text("Can add more "),
+            Center(
+              child: CircleAvatar(
+                radius: MediaQuery.of(context).size.width/5,
+                 child:const Icon(Icons.shopping_cart,size: 80,),
+                ),),
+            
            const ListTile(
               title: Text("Feedback"),
             ),
+            ListTile(
+              onTap: ()async{
+                await FirebaseAuth.instance.signOut();
+              },
+              title:const Text("Logout"),
+            )
 
           ],
         ),
