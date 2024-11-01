@@ -118,6 +118,19 @@ Future<String>addAddress(
     address.addAll({address.keys.last+1:[latitude,longitude,altitude,other]});
     await firestore.collection("Users").doc(_user.uid).update({"AddressBook":address});
   });
-
 return state;
+}
+Future<Map<dynamic,dynamic>>getCart()async{
+  Box userBox = Hive.box("UserData");
+  Map cart ={};
+
+  if (userBox.containsKey("Cart")) {
+    cart = userBox.get("Cart");
+  }else{
+      await firestore.collection("Users").doc(_user.uid).get().then((onvalue){
+    cart = onvalue.data()!["Cart"];
+  });
+  userBox.put("Cart", cart);
+  }
+  return cart;
 }
