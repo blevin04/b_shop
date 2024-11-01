@@ -1,7 +1,9 @@
+import 'package:b_shop/authPage.dart';
 import 'package:b_shop/backEndFunctions.dart';
 import 'package:b_shop/checkOut.dart';
 import 'package:b_shop/main.dart';
 import 'package:b_shop/utils.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -13,14 +15,7 @@ class Homepage extends StatefulWidget {
   State<Homepage> createState() => _HomepageState();
 }
 int current_screen = 0;
-List categories = [
-  "Gas",
-  "Cerials",
-  "Food Stuffs",
-  "Electronics",
-  "Floar",
-  "other",
-];
+
 List images = [
   "https://rubiskenya.com/wp-content/uploads/2023/09/rubis-gas-scaled-1.png",
   "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSmv8AS3xqFXwGfpeggg6GjINaJpjQxJ9rZ4g&s",
@@ -37,10 +32,17 @@ void saveTheme()async{
      await Hive.box("Theme").put("DarkMode",0):
      await Hive.box("Theme").put("DarkMode", 1);
 }
+Future<List> openboxs()async{
+  await Hive.openBox("Categories");
+  List categoriesL = Hive.box("Categories").isEmpty?[]:
+  Hive.box("Categories").values.toList();
+  return categoriesL;
+}
 class _HomepageState extends State<Homepage> {
   @override
   void initState() {
     super.initState();
+   
     getCategories();
   }
   @override
@@ -94,7 +96,7 @@ class _HomepageState extends State<Homepage> {
         title:const Text("B_Shop ",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20),),
         ),
       body:current_screen==0? home():
-      current_screen == 1?search():cart(context),
+      current_screen == 1?search():cart(),
       bottomNavigationBar: BottomAppBar(
         height: 60,
         color: Colors.transparent,
@@ -132,69 +134,163 @@ Widget home(){
           const SizedBox(height: 15,),
            SizedBox(
             height: 30,
-             child: ListView.builder(
-               itemCount: categories.length,
-               shrinkWrap: true,
-              // padding: EdgeInsets.all(5),
-               scrollDirection: Axis.horizontal,
-               itemBuilder: (BuildContext context, int index) {
-                 return Padding(
-                   padding: const EdgeInsets.only(right: 5.0),
-                   child: Container(
-                    padding:const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        border: Border.all(color: const Color.fromARGB(255, 120, 119, 119)),
-                        borderRadius: BorderRadius.circular(10)
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.only(left: 10.0,right: 10),
-                        child: Text(categories[index]),
-                      ),
-                    ),
+             child: FutureBuilder(
+              future: openboxs(),
+               builder: (context,snapshott) {
+                if (snapshott.connectionState == ConnectionState.waiting) {
+                  return  ListView.builder(
+                    itemCount: 5,
+                    itemBuilder: (BuildContext context, int index) {
+                      return Container(
+                        height: 30,
+                        width: 60,
+                        decoration: BoxDecoration(
+                          color: const Color.fromARGB(255, 112, 110, 110),
+
+                        ),
+                        child:const Text(""),
+                      );
+                    },
+                  );
+                }
+                 return ListView.builder(
+                   itemCount: snapshott.data!.length,
+                   shrinkWrap: true,
+                  // padding: EdgeInsets.all(5),
+                   scrollDirection: Axis.horizontal,
+                   itemBuilder: (BuildContext context, int index) {
+                     return Padding(
+                       padding: const EdgeInsets.only(right: 5.0),
+                       child: Container(
+                        padding:const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: const Color.fromARGB(255, 120, 119, 119)),
+                            borderRadius: BorderRadius.circular(10)
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 10.0,right: 10),
+                            child: Text(snapshott.data![index]),
+                          ),
+                        ),
+                     );
+                   },
                  );
-               },
+               }
              ),
            ),
            const SizedBox(height: 15,),
-           GridView.builder(
-            shrinkWrap: true,
-             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-               crossAxisCount: 2,
-             ),
-             itemCount: images.length,
-             itemBuilder: (BuildContext context, int index) {
-              List contentkeys = comDate.keys.toList();
-              var price = comDate[contentkeys[index]][1];
-              //String name = comDate[contentkeys[index]][0];
-              Map <String,dynamic> items = {contentkeys[index]:price};
-               return Card(
-                elevation: 1,
-                //color: Colors.transparent,
-                child: Column(
-                  
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(child: Center(child: Image(image: NetworkImage(images[index])))),
-                    Padding(padding:const EdgeInsets.only(top: 5,left: 5,right: 5),child: Text(contentkeys[index],softWrap: true, maxLines: 2,overflow: TextOverflow.ellipsis,),),
-                     Padding(
-                      padding:const EdgeInsets.only(left: 5,right: 5),
-                       child: Text("KSH ${price.toString()}",style:const TextStyle(fontWeight: FontWeight.bold,fontSize: 16),),
-                     ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+           FutureBuilder(
+            future: getFeed(),
+             builder: (context,feedSnapshot) {
+              if (feedSnapshot.connectionState == ConnectionState.waiting) {
+                return GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                  ),
+                  itemCount: 8,
+                  itemBuilder: (BuildContext context, int index) {
+                    return const Card();
+                  },
+                );
+              }print(feedSnapshot.data);
+               return GridView.builder(
+                shrinkWrap: true,
+                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                   crossAxisCount: 2,
+                 ),
+                 itemCount: feedSnapshot.data!.length,
+                 itemBuilder: (BuildContext context, int index) {
+                  // List contentkeys = comDate.keys.toList();
+                  // var price = comDate[contentkeys[index]][1];
+                  // //String name = comDate[contentkeys[index]][0];
+                  List conKeys = feedSnapshot.data!.keys.toList();
+                  String name = feedSnapshot.data![conKeys[index]]["Name"];
+                  int priceN = feedSnapshot.data![conKeys[index]]["Price"].toInt();
+                  Map <String,dynamic> items = {name:priceN};
+                   return Card(
+                    elevation: 1,
+                    //color: Colors.transparent,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        IconButton(
-                          padding:const EdgeInsets.all(0),
-                          onPressed: (){}, icon:const Icon(Icons.add_shopping_cart,size: 20,)),
-                          TextButton(onPressed: (){
-                            Navigator.push(context, MaterialPageRoute(builder: (context)=>Checkout(items: items)));
-                          }, child:const Text("Buy Now"))
+                        Expanded(child: 
+                        FutureBuilder(
+                          future: getImages(conKeys[index]),
+                          builder: (BuildContext context, AsyncSnapshot snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return Center();
+                            }
+                            //print(snapshot.data.length);
+                            return Center(
+                              child: Image(
+                                image: MemoryImage(snapshot.data.first)
+                                ));
+                          },
+                        ),
+                        ),
+                        Padding(padding:const EdgeInsets.only(top: 5,left: 5,right: 5),
+                        child: Text(name,softWrap: true, 
+                        style:const TextStyle(fontWeight: FontWeight.bold),
+                        maxLines: 2,overflow: TextOverflow.ellipsis,),),
+                         Padding(
+                          padding:const EdgeInsets.only(left: 5,right: 5),
+                           child: Text("KSH $priceN",style:const TextStyle(fontWeight: FontWeight.bold,fontSize: 16),),
+                         ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            IconButton(
+                              padding:const EdgeInsets.all(0),
+                              onPressed: ()async{
+                                showDialog(context: context, builder: (context){
+                                  return Dialog(
+                                    child: Container(
+                                      height: 100,
+                                      width: 200,
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                         
+                                        const Padding(
+                                           padding:  EdgeInsets.all(8.0),
+                                           child:  Text(
+                                            "Login or register to add items to cart",
+                                            softWrap: true,
+                                            overflow: TextOverflow.ellipsis,
+                                            ),
+                                         ),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              TextButton(onPressed: ()async{
+                                                Navigator.pop(context);
+                                               await Navigator.push(context, (MaterialPageRoute(builder: (context)=>const Authpage())));
+                                              }, child:const Text("Ok")),
+                                              TextButton(onPressed: (){
+                                                Navigator.pop(context);
+                                              }, child:const Text("Cancel"))
+                                            ],
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                });
+                              }, icon:const Icon(Icons.add_shopping_cart,size: 20,)),
+                              TextButton(onPressed: (){
+                                Navigator.push(context, MaterialPageRoute(builder: (context)=>Checkout(items: items)));
+                              }, child:const Text("Buy Now"))
+                          ],
+                        )
                       ],
-                    )
-                  ],
-                ),
+                    ),
+                   );
+                 },
                );
-             },
+             }
            ),
           ],
         ),
@@ -216,26 +312,59 @@ Widget search(){
   );
 }
 
-Widget cart(BuildContext context){
-  bool selectedaddress = false;
-  Map<String,dynamic> items = {};
-  comDate.forEach((key,value){
-    items.addAll({key:value[1]});
-  });
-  return SingleChildScrollView(
-    child: Column(
-      children: [
-        ListTile(
-          leading:const CircleAvatar(
-            radius: 30,
-          ),
-          title:const Text("Customer Name",style: TextStyle(fontWeight: FontWeight.bold),),
-          subtitle:const Text("My Cart"),
-          trailing: IconButton(onPressed: (){
+class cart extends StatefulWidget {
+  const cart({super.key});
 
-          }, icon:const Icon(Icons.edit)),
-        ),
-       const Divider(),
+  @override
+  State<cart> createState() => _cartState();
+}
+ bool selectedaddress = false;
+ Map<String,dynamic> items = {};
+ void openCartbox()async{
+  Hive.openBox("Cart");
+ }
+class _cartState extends State<cart> {
+  @override
+  void initState() {
+    super.initState();
+    openCartbox();
+  }
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+    child: StreamBuilder(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (BuildContext context, AsyncSnapshot snapshot) {
+        if (!snapshot.hasData) {
+          return Center(
+            child: InkWell(
+              onTap: ()async{
+                await Navigator.push(context, (MaterialPageRoute(builder: (context)=>const Authpage())));
+              },
+              child:const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.login,size: 100,),
+                Text("Log In to View Cart")
+              ],
+              ),
+            ),);
+        }
+        return Column(
+          children: [
+            Container(
+              child: ListTile(
+                  leading:const CircleAvatar(
+            radius: 30,
+                  ),
+                  title:const Text("Customer Name",style: TextStyle(fontWeight: FontWeight.bold),),
+                  subtitle:const Text("My Cart"),
+                  trailing: IconButton(onPressed: (){
+                
+                  }, icon:const Icon(Icons.edit)),
+                ),
+            ),
+            const Divider(),
        Container(
         //height: 30,
         child: Column(
@@ -327,7 +456,19 @@ Widget cart(BuildContext context){
             ),
           ),
         )
-      ],
+          ],
+        );
+      },
     ),
   );
+  }
 }
+
+// Widget cart0(BuildContext context){
+//  
+//   
+//   comDate.forEach((key,value){
+//     items.addAll({key:value[1]});
+//   });
+//   return 
+// }

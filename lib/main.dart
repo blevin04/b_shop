@@ -37,7 +37,7 @@ class _MyAppState extends State<MyApp> {
     // TODO: implement initState
     super.initState();
     Hive.openBox("Categories");
-    
+    Hive.openBox("UserData");
   }
   @override
   Widget build(BuildContext context) {
