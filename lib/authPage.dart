@@ -54,7 +54,7 @@ Widget regesterPage(BuildContext context){
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text("Register",style: TextStyle(color: Colors.white,fontSize: 35,fontWeight: FontWeight.bold),),
-                Text("Create an account")
+                Text("Create an account",style: TextStyle(color: Colors.white),)
               ],
             ),
           ),
@@ -162,7 +162,7 @@ Widget regesterPage(BuildContext context){
                 color: const Color.fromARGB(255, 21, 55, 22),
                 borderRadius: BorderRadius.circular(20)
               ),
-              child:const Text("Register",style: TextStyle(fontWeight: FontWeight.normal,fontSize: 18),),
+              child:const Text("Register",style: TextStyle(fontWeight: FontWeight.normal,fontSize: 18,color: Colors.white),),
             ),
           ),
           const SizedBox(height: 50,),
@@ -201,7 +201,7 @@ class login extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text("Sign in to your \n account",style: TextStyle(color: Colors.white,fontSize: 35,fontWeight: FontWeight.bold),),
-                  Text("Log in to your account")
+                  Text("Log in to your account",style: TextStyle(color:Colors.white),)
                 ],
               ),
             ),
@@ -269,7 +269,7 @@ class login extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                     color: const Color.fromARGB(255, 22, 45, 23),
                   ),
-                  child:const Text("Login",style: TextStyle(fontSize: 22),),
+                  child:const Text("Login",style: TextStyle(fontSize: 22,color: Colors.white),),
                 ),
               ),
             ),
@@ -298,12 +298,13 @@ class login extends StatelessWidget {
                 decoration: BoxDecoration(borderRadius: BorderRadius.circular(10)
                 ),
                 child:const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Image(
+                      height: 40,
+                      width: 40,
                       fit: BoxFit.cover,
-                      image: AssetImage(
-                        "/lib/assets/google.png",
-                        )),
+                      image:NetworkImage("https://banner2.cleanpng.com/20240111/qtv/transparent-google-logo-colorful-google-logo-with-bold-green-1710929465092.webp")),
                       Text("Google")
                   ],
                 ),

@@ -5,6 +5,7 @@ import 'package:b_shop/main.dart';
 import 'package:b_shop/utils.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hive/hive.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -58,7 +59,6 @@ class _HomepageState extends State<Homepage> {
                 radius: MediaQuery.of(context).size.width/5,
                  child:const Icon(Icons.shopping_cart,size: 80,),
                 ),),
-            
            const ListTile(
               title: Text("Feedback"),
             ),
@@ -362,28 +362,172 @@ class _cartState extends State<cart> {
         }
         return Column(
           children: [
-            Container(
+            FutureBuilder(
+              future: getUser(),
+              builder: (BuildContext context, AsyncSnapshot snapshot) {
+                if(snapshot.connectionState == ConnectionState.waiting){
+                  return Container(
               child: ListTile(
                   leading:const CircleAvatar(
-            radius: 30,
+                  radius: 30,
                   ),
-                  title:const Text("Customer Name",style: TextStyle(fontWeight: FontWeight.bold),),
+                  title: Container(
+                    height: 20,
+                    width: 100,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      color: const Color.fromARGB(255, 115, 115, 115)),
+                  ),
                   subtitle:const Text("My Cart"),
                   trailing: IconButton(onPressed: (){
                 
                   }, icon:const Icon(Icons.edit)),
                 ),
+            );
+                }
+                //print(snapshot.data);
+                String userName = snapshot.data["Name"];
+                return Container(
+              child: ListTile(
+                  leading:FutureBuilder(
+                    future: getDp(),
+                    
+                    builder: (BuildContext context, AsyncSnapshot snapshotdp) {
+                      if (snapshotdp.connectionState == ConnectionState.waiting) {
+                        return const CircleAvatar(
+                        radius: 30,
+                        );
+                      }
+                      if(snapshotdp.data == null|| snapshotdp.data.isEmpty){
+                        return const CircleAvatar(
+                        radius: 30,
+                      child: Icon(Icons.shopping_cart,size: 30,),
+                      );
+                      }
+                      print(snapshotdp.data);
+                      return  CircleAvatar(
+                    radius: 30,
+                    backgroundImage: MemoryImage(snapshotdp.data),
+                    );
+                    },
+                  ),
+                  title: Text(userName,style:const TextStyle(fontWeight: FontWeight.bold),),
+                  subtitle:const Text("My Cart"),
+                  trailing: IconButton(onPressed: (){
+                    TextEditingController changeName =TextEditingController();
+                    String imagePath ="";
+                    showDialog(context: context,
+                     builder: (context){
+                      return Dialog(
+                        child: Container(
+                          height: 280,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Stack(
+                                alignment: Alignment.bottomRight,
+                                children: [
+                                  FutureBuilder(
+                                    future: getDp(),
+                                    builder: (BuildContext context, AsyncSnapshot snapshotdp) {
+                                      if (snapshotdp.connectionState == ConnectionState.waiting) {
+                                        return const CircleAvatar(
+                                        radius: 50,
+                                        );
+                                      }
+                                      if(snapshotdp.data == null|| snapshotdp.data.isEmpty){
+                                        return const CircleAvatar(
+                                        radius: 50,
+                                      child: Icon(Icons.shopping_cart,size: 30,),
+                                      );
+                                      }
+                                      print(snapshotdp.data);
+                                      return  CircleAvatar(
+                                    radius: 50,
+                                    backgroundImage: MemoryImage(snapshotdp.data),
+                                    );
+                                    },
+                                  ),
+                                  Positioned(
+                                    right: -13,
+                                    bottom: -14,
+                                    child: IconButton(
+                                      splashColor: Colors.transparent,
+                                      onPressed: (){
+                                        
+                                      }, 
+                                      icon:const Icon(Icons.change_circle)),
+                                  )
+                                ],
+                              ),
+                              const SizedBox(height: 20,),
+                              Padding(
+                                padding: const EdgeInsets.all(20.0),
+                                child: TextField(
+                                  controller: changeName,
+                                  decoration: InputDecoration(
+                                    labelText: "Change name",
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                      borderSide:const BorderSide(color:  Color.fromARGB(255, 103, 101, 101))
+                                    )
+                                  ),
+                                ),
+                              ),
+                              InkWell(
+                                onTap: ()async{
+                                  String state ="";
+                                  while (state.isEmpty) {
+                                    showcircleprogress(context);
+                                    state = await updateProfile(
+                                      changeName.text
+                                      , imagePath
+                                      );
+                                  }
+                                  Navigator.pop(context);
+                                  if (state == "Success") {
+                                    Navigator.pop(context);
+                                    setState(() {
+                                    });
+                                  }
+                                },
+                                borderRadius: BorderRadius.circular(20),
+                                child: Container(
+                                  alignment: Alignment.center,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(20),
+                                    color: const Color.fromARGB(255, 20, 36, 49)
+                                  ),
+                                  height: 40,
+                                  width: 200,
+                                  child:const Text("Save Changes",style: TextStyle(color: Colors.white),),
+                                ),
+                              )
+                            ],
+                          ),
+                        ),
+                      );
+                     });
+                  }, icon:const Icon(Icons.edit)),
+                ),
+            );
+              },
             ),
+            
             const Divider(),
        Container(
         //height: 30,
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.start,
           children: [
             SizedBox(
               height: 30,
               child: Stack(
                 children: [
-                 const Center(child: Text("Delivery Location"),),
+                 const Center(child: Text("Delivery Location",style: TextStyle(fontWeight: FontWeight.bold),),),
                   Positioned(
                     right: 10,
                     top: -2,
@@ -394,19 +538,74 @@ class _cartState extends State<cart> {
                 ],
               ),
             ),
-            ListTile(
-              leading: Icon(Icons.location_on),
-              title: Text("Home Address"),
-              trailing: StatefulBuilder(
-                builder: (BuildContext context, setStateloc) {
-                  return IconButton(onPressed: (){
-                    setStateloc((){
-                      selectedaddress = !selectedaddress;
-                    });
-                  }, icon: Icon(selectedaddress?Icons.check_box: Icons.check_box_outline_blank_outlined));
-                },
-              ),
-            )
+            FutureBuilder(
+              future: Hive.openBox("Addresses"),
+              builder: (BuildContext context, AsyncSnapshot snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Container(
+                    alignment: Alignment.bottomLeft,
+                    width: 150,
+                    height: 20,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      color: const Color.fromARGB(255, 120, 120, 120)),
+                  );
+                }
+                Box addressBox = Hive.box("Addresses");
+                return addressBox.isEmpty?
+                Center(child: TextButton(onPressed: ()async{
+                  showDialog(context: context, 
+                  builder: (context){
+                    return Dialog(
+                      child: Container(
+                        height: 120,
+                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(10)),
+                        child: Column(
+                          children: [
+                           const Text("Add Delivery Location",style: TextStyle(fontWeight: FontWeight.bold),),
+                           TextButton(onPressed: ()async{
+                             //////Add adress////// add location plugin
+                           }, 
+                           child:const Row(
+                             children: [
+                              Icon(Icons.location_on_outlined),
+                                Text("Current Location"),
+
+                             ],
+                           )),
+                           TextButton(onPressed: (){},
+                            child:const Row(
+                             children: [
+                              Icon(Icons.map_outlined),
+                               const Text("Preview Current Location"),
+                             ],
+                           )),
+                          ],
+                        ),
+                      ),
+                    );
+                  });
+                }, 
+                child:const Row(children: [Icon(Icons.add_location_alt_rounded),Text("Add New Adress")],)
+                ),):
+                ListView.builder(
+                  itemCount: addressBox.length,
+                  shrinkWrap: true,
+                  itemBuilder: (BuildContext context, int index) {
+                    return ListTile(
+                      title: Text("Address ${addressBox.keys.toList()[index]}"),
+                      leading:IconButton(onPressed: (){
+                        //////edit the address name and delete features
+                      }, icon:const Icon(Icons.edit)),
+                      trailing: IconButton(onPressed: (){
+                        ////open the maps app for location preview
+                      }, icon:const Icon(FontAwesomeIcons.mapLocation)),
+                    );
+                  },
+                )
+                ;
+              },
+            ),
           ],
         ),
        ),

@@ -17,6 +17,7 @@ class UserModel{
     "Email":email,
     "Cart":{},
     "Uid":Uid,
+    "AddressBook":{},
   };
 }
 
