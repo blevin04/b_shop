@@ -1,7 +1,9 @@
+import 'package:b_shop/backEndFunctions.dart';
 import 'package:b_shop/checkOut.dart';
 import 'package:b_shop/main.dart';
 import 'package:b_shop/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Homepage extends StatefulWidget {
@@ -30,7 +32,17 @@ Map comDate = {
   "Exe Atta Mark 1 2kg":["2KG of exe unga for chapatis",160,20],
 };
 bool darkmode = false;
+void saveTheme()async{
+   darkmode?
+     await Hive.box("Theme").put("DarkMode",0):
+     await Hive.box("Theme").put("DarkMode", 1);
+}
 class _HomepageState extends State<Homepage> {
+  @override
+  void initState() {
+    super.initState();
+    getCategories();
+  }
   @override
   Widget build(BuildContext context) {
     return  Scaffold(
@@ -66,6 +78,7 @@ class _HomepageState extends State<Homepage> {
           StatefulBuilder(
             builder: (context,themestate) {
               return IconButton(onPressed: (){
+                saveTheme();
               if (darkmode) {
                 MyApp.of(context)!.changeTheme(ThemeMode.light);
               }else{

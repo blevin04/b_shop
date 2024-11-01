@@ -2,11 +2,15 @@ import 'package:b_shop/firebase_options.dart';
 import 'package:b_shop/homepage.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/adapters.dart';
 
 void main()async {
+    WidgetsFlutterBinding.ensureInitialized();
+ await Hive.initFlutter();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
 );
+  await Hive.openBox("Theme");
   runApp(const MyApp());
 }
 
@@ -19,13 +23,22 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  void changeTheme(ThemeMode themeMode) {
+  void changeTheme(ThemeMode themeMode){
+   
     setState(() {
       _themeMode = themeMode;
     });
   }
   // This widget is the root of your application.
-  ThemeMode _themeMode = ThemeMode.light;
+  ThemeMode _themeMode =Hive.box("Theme").isEmpty?ThemeMode.light: Hive.box("Theme").get("DarkMode")==0?
+  ThemeMode.light:ThemeMode.dark;
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    Hive.openBox("Categories");
+    
+  }
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
