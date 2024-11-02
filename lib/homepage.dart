@@ -7,6 +7,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hive/hive.dart';
+import 'package:location/location.dart';
+import 'package:maps_launcher/maps_launcher.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Homepage extends StatefulWidget {
@@ -539,7 +541,7 @@ class _cartState extends State<cart> {
               ),
             ),
             FutureBuilder(
-              future: Hive.openBox("Addresses"),
+              future: Hive.openBox("AddressBook"),
               builder: (BuildContext context, AsyncSnapshot snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Container(
@@ -551,7 +553,7 @@ class _cartState extends State<cart> {
                       color: const Color.fromARGB(255, 120, 120, 120)),
                   );
                 }
-                Box addressBox = Hive.box("Addresses");
+                Box addressBox = Hive.box("AddressBook");
                 return addressBox.isEmpty?
                 Center(child: TextButton(onPressed: ()async{
                   showDialog(context: context, 
@@ -573,11 +575,20 @@ class _cartState extends State<cart> {
 
                              ],
                            )),
-                           TextButton(onPressed: (){},
+                           TextButton(onPressed: ()async{
+                            LocationData address;
+                            address = await getLocation();
+                            if (await MapsLauncher.launchCoordinates(address.latitude!, address.longitude!)) {
+                              //Navigator.pop(context);
+                            }else{
+                              showsnackbar(context, "Unable to open Maps");
+                            }
+                            
+                           },
                             child:const Row(
                              children: [
                               Icon(Icons.map_outlined),
-                               const Text("Preview Current Location"),
+                               Text("Preview Current Location"),
                              ],
                            )),
                           ],

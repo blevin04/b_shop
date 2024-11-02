@@ -112,11 +112,13 @@ Future<String>addAddress(
   var altitude,
   var other
 )async{
+  Box userBox = Hive.box("AddressBook");
   String state = "";
   await firestore.collection("Users").doc(_user.uid).get().then((onValue)async{
     Map address = onValue.data()!["AddressBook"];
     address.addAll({address.keys.last+1:[latitude,longitude,altitude,other]});
     await firestore.collection("Users").doc(_user.uid).update({"AddressBook":address});
+    userBox.add([latitude,longitude,altitude,other]);
   });
 return state;
 }
