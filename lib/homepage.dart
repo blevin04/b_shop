@@ -235,7 +235,7 @@ Widget home(){
                     return const Card();
                   },
                 );
-              }print(feedSnapshot.data);
+              }
                return GridView.builder(
                 shrinkWrap: true,
                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -364,21 +364,197 @@ Widget home(){
         ),
       );
 }
-Widget search(){
-  return SingleChildScrollView(
-    child: Column(
-      children: [
-        SizedBox(height: 15,),
-        Padding(
-          padding: EdgeInsets.all(10),
-          child: SearchBar(
-            leading: Icon(Icons.search),
-            hintText: "Search for an item eg.milk",
-          ))
-      ],
-    ),
-  );
+
+class search extends StatefulWidget {
+  const search({super.key});
+
+  @override
+  State<search> createState() => _searchState();
 }
+Map filteredFeed ={};
+TextEditingController searchController = TextEditingController();
+class _searchState extends State<search> {
+
+  @override
+  Widget build(BuildContext context) {
+    return  Scaffold(
+      body: Column(
+        children: [
+           Padding(
+          padding:const EdgeInsets.all(10),
+          child: SearchBar(
+            controller: searchController,
+            leading:const Icon(Icons.search),
+            hintText: "Search for an item eg.milk",
+            onChanged: (value){
+              List toRemove =[];
+              filteredFeed.forEach((key,value0){
+                //String test ="";
+                if (!value0["Name"].toLowerCase().contains(value.toLowerCase())) {
+                  toRemove.add(key);
+                }
+              });
+              toRemove.forEach((value){
+                filteredFeed.remove(value);
+              });
+              setState(() {
+                
+              });
+            },
+          )),
+          FutureBuilder(
+            future: getFeed(),
+            builder: (BuildContext context, AsyncSnapshot snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator(),);
+              }
+              if (filteredFeed.isEmpty && searchController.text.isEmpty) {
+                filteredFeed = snapshot.data!;
+              }
+              return GridView.builder(
+                shrinkWrap: true,
+                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                   crossAxisCount: 2,
+                 ),
+                 itemCount: filteredFeed.length,
+                 itemBuilder: (BuildContext context, int index) {
+                  // List contentkeys = comDate.keys.toList();
+                  // var price = comDate[contentkeys[index]][1];
+                  // //String name = comDate[contentkeys[index]][0];
+                  List conKeys = filteredFeed.keys.toList();
+                  String name = filteredFeed[conKeys[index]]["Name"];
+                  int priceN = filteredFeed[conKeys[index]]["Price"].toInt();
+                  Map <String,dynamic> items = {name:priceN};
+                  int ammountInCart = 0;
+                  bool incart = false;
+                  if ( Hive.box("UserData").containsKey("Cart")) {
+                     Map cart = Hive.box("UserData").get("Cart");
+                     if (cart.containsKey(conKeys[index])) {
+                       incart = true;
+                       ammountInCart = cart[conKeys[index]].last;
+                     }
+                  }
+                   return Card(
+                    elevation: 1,
+                    //color: Colors.transparent,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(child: 
+                        FutureBuilder(
+                          future: getImages(conKeys[index]),
+                          builder: (BuildContext context, AsyncSnapshot snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return Center();
+                            }
+                            //print(snapshot.data.length);
+                            return Center(
+                              child: Image(
+                                image: MemoryImage(snapshot.data.first)
+                                ));
+                          },
+                        ),
+                        ),
+                        Padding(padding:const EdgeInsets.only(top: 5,left: 5,right: 5),
+                        child: Text(name,softWrap: true, 
+                        style:const TextStyle(fontWeight: FontWeight.bold),
+                        maxLines: 2,overflow: TextOverflow.ellipsis,),),
+                         Padding(
+                          padding:const EdgeInsets.only(left: 5,right: 5),
+                           child: Text("KSH $priceN",style:const TextStyle(fontWeight: FontWeight.bold,fontSize: 16),),
+                         ),
+                        StatefulBuilder(
+                          builder: (context,cartState) {
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                incart?
+                                IconButton(
+                                  padding:const EdgeInsets.all(0),
+                                  onPressed: ()async{
+                                    FirebaseAuth.instance.currentUser ==null?
+                                    showDialog(context: context, builder: (context){
+                                      return Dialog(
+                                        child: Container(
+                                          height: 100,
+                                          width: 200,
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                            crossAxisAlignment: CrossAxisAlignment.center,
+                                            children: [
+                                             
+                                            const Padding(
+                                               padding:  EdgeInsets.all(8.0),
+                                               child:  Text(
+                                                "Login or register to add items to cart",
+                                                softWrap: true,
+                                                overflow: TextOverflow.ellipsis,
+                                                ),
+                                             ),
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  TextButton(onPressed: ()async{
+                                                    Navigator.pop(context);
+                                                   await Navigator.push(context, (MaterialPageRoute(builder: (context)=>const Authpage())));
+                                                  }, child:const Text("Ok")),
+                                                  TextButton(onPressed: (){
+                                                    Navigator.pop(context);
+                                                  }, child:const Text("Cancel"))
+                                                ],
+                                              )
+                                            ],
+                                          ),
+                                        ),
+                                      );
+                                    }):
+                                    await addtoCart(conKeys[index], ammountInCart, name,priceN.toDouble());
+                                     cartState((){
+                                      ammountInCart++;
+                                      incart = true;
+                                     });
+                                    ;
+                                  }, icon:const Icon(Icons.add_shopping_cart,size: 20,)):
+                                  InputQty.int(
+                                    onQtyChanged: (val)async {
+                                    ammountInCart = val;
+                                   await addtoCart(conKeys[index], val, name,priceN.toDouble());
+                                  },
+                                  ),
+                                  TextButton(onPressed: (){
+                                    Navigator.push(context, MaterialPageRoute(builder: (context)=>Checkout(items: items)));
+                                  }, child:const Text("Buy Now"))
+                              ],
+                            );
+                          }
+                        )
+                      ],
+                    ),
+                   );
+                 },
+               );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+// Widget search(){
+//   return SingleChildScrollView(
+//     child: Column(
+//       children: [
+//         SizedBox(height: 15,),
+//         Padding(
+//           padding: EdgeInsets.all(10),
+//           child: SearchBar(
+//             leading: Icon(Icons.search),
+//             hintText: "Search for an item eg.milk",
+//           ))
+//       ],
+//     ),
+//   );
+// }
 
 class cart extends StatefulWidget {
   const cart({super.key});
