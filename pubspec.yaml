@@ -45,7 +45,6 @@ dependencies:
   font_awesome_flutter: ^10.7.0
   location: ^7.0.1
   file_picker: ^8.1.3
-  maps_launcher: ^2.2.1
 
 dev_dependencies:
   flutter_test:

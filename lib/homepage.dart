@@ -7,8 +7,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:location/location.dart';
-import 'package:maps_launcher/maps_launcher.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Homepage extends StatefulWidget {
@@ -536,7 +536,120 @@ class _cartState extends State<cart> {
                     //bottom: 0,
                     child: IconButton(
                       splashColor: Colors.transparent,
-                      onPressed: (){}, icon:const Icon(Icons.add)))
+                      onPressed: ()async{
+                        await Hive.openBox("AddressBook");
+                        Box addressBox = Hive.box("AddressBook");
+                        showDialog(context: context, 
+                        builder: (context){
+                          return Dialog(
+                            child: Container(
+                              height: 120,
+                              decoration: BoxDecoration(borderRadius: BorderRadius.circular(10)),
+                              child: Column(
+                                children: [
+                                const Text("Add Delivery Location",style: TextStyle(fontWeight: FontWeight.bold),),
+                                TextButton(onPressed: ()async{
+                                  //////Add adress////// add location plugin
+                                  
+                                  //String state0 = "";
+                                  LocationData locationData = await getLocation(context);
+                                  Navigator.pop(context);
+                                  TextEditingController namecontrollerA = TextEditingController();
+                                  TextEditingController detailcontroller = TextEditingController();
+                                  int num = addressBox.length+1;
+                                  String adressname = "Address $num";
+                                  showDialog(context: context, 
+                                  builder: (context){
+                                    return Dialog(
+                                      child: Container(
+                                        height: 250,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(10)
+                                        ),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                          children: [
+                                            const Text("New Address",style: TextStyle(fontWeight: FontWeight.bold),),
+                                            Padding(
+                                              padding:const EdgeInsets.all(10),
+                                              child: TextField(
+                                                controller: namecontrollerA,
+                                                decoration: InputDecoration(
+                                                  hintText: adressname,
+                                                  border: OutlineInputBorder(
+                                                    borderRadius: BorderRadius.circular(13),
+                                                    borderSide:const BorderSide(color:  Color.fromARGB(255, 88, 88, 88))
+                                                  )
+                                                ),
+                                              ),
+                                              ),
+                                              //const SizedBox(height: 10,),
+                                              Padding(
+                                              padding:const EdgeInsets.all(10),
+                                              child: TextField(
+                                                controller: detailcontroller,
+                                                decoration: InputDecoration(
+                                                  hintText: "More info. eg, 2nd floor ,room 12",
+                                                  border: OutlineInputBorder(
+                                                    borderRadius: BorderRadius.circular(13),
+                                                    borderSide:const BorderSide(color:  Color.fromARGB(255, 88, 88, 88))
+                                                  )
+                                                ),
+                                              ),
+                                              ),
+                                              //const SizedBox(height: 20,),
+                                              TextButton(onPressed: ()async{
+                                                String state1 = "";
+                                                while(state1.isEmpty){
+                                                  showcircleprogress(context);
+                                                  state1 =await addAddress(
+                                                    namecontrollerA.text.isEmpty?adressname:namecontrollerA.text, 
+                                                    locationData.latitude!, 
+                                                    locationData.longitude!, 
+                                                    locationData.altitude!, 
+                                                    detailcontroller.text);
+                                                }
+                                                Navigator.pop(context);
+                                                if (state1 == "Success") {
+                                                  Navigator.pop(context);
+                                                  
+                                                }else{
+                                                  showsnackbar(context, state1);
+                                                }
+                                              }, child:const Text("Save Address"))
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                  );
+                                }, 
+                                child:const Row(
+                                  children: [
+                                    Icon(Icons.location_on_outlined),
+                                      Text("Current Location"),
+                                  ],
+                                )),
+                                TextButton(onPressed: ()async{
+                                  LocationData address;
+                                  address = await getLocation(context);
+                                  await openMap(address.latitude!, address.longitude!,context);
+                                  
+                                },
+                                  child:const Row(
+                                  children: [
+                                    Icon(Icons.map_outlined),
+                                    Text("Preview Current Location"),
+                                  ],
+                                )),
+                                ],
+                              ),
+                            ),
+                          );
+                        });
+
+
+                      }, icon:const Icon(Icons.add)))
                 ],
               ),
             ),
@@ -554,65 +667,143 @@ class _cartState extends State<cart> {
                   );
                 }
                 Box addressBox = Hive.box("AddressBook");
-                return addressBox.isEmpty?
-                Center(child: TextButton(onPressed: ()async{
-                  showDialog(context: context, 
-                  builder: (context){
-                    return Dialog(
-                      child: Container(
-                        height: 120,
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(10)),
-                        child: Column(
-                          children: [
-                           const Text("Add Delivery Location",style: TextStyle(fontWeight: FontWeight.bold),),
-                           TextButton(onPressed: ()async{
-                             //////Add adress////// add location plugin
-                           }, 
-                           child:const Row(
-                             children: [
-                              Icon(Icons.location_on_outlined),
-                                Text("Current Location"),
-
-                             ],
-                           )),
-                           TextButton(onPressed: ()async{
-                            LocationData address;
-                            address = await getLocation();
-                            if (await MapsLauncher.launchCoordinates(address.latitude!, address.longitude!)) {
-                              //Navigator.pop(context);
-                            }else{
-                              showsnackbar(context, "Unable to open Maps");
-                            }
-                            
-                           },
-                            child:const Row(
-                             children: [
-                              Icon(Icons.map_outlined),
-                               Text("Preview Current Location"),
-                             ],
-                           )),
-                          ],
-                        ),
-                      ),
+                return 
+                ListenableBuilder(
+                  listenable: addressBox.listenable(),
+                  builder: (context,child) {
+                    return addressBox.isEmpty?
+                    Center(child: TextButton(onPressed: ()async{
+                      showDialog(context: context, 
+                      builder: (context){
+                        return Dialog(
+                          child: Container(
+                            height: 120,
+                            decoration: BoxDecoration(borderRadius: BorderRadius.circular(10)),
+                            child: Column(
+                              children: [
+                               const Text("Add Delivery Location",style: TextStyle(fontWeight: FontWeight.bold),),
+                               TextButton(onPressed: ()async{
+                                 //////Add adress////// add location plugin
+                                 
+                                 //String state0 = "";
+                                 LocationData locationData = await getLocation(context);
+                                 Navigator.pop(context);
+                                 TextEditingController namecontrollerA = TextEditingController();
+                                 TextEditingController detailcontroller = TextEditingController();
+                                int num = addressBox.length+1;
+                                String adressname = "Address $num";
+                                 showDialog(context: context, 
+                                 builder: (context){
+                                  return Dialog(
+                                    child: Container(
+                                      height: 250,
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(10)
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                        children: [
+                                          const Text("New Address",style: TextStyle(fontWeight: FontWeight.bold),),
+                                          Padding(
+                                            padding:const EdgeInsets.all(10),
+                                            child: TextField(
+                                              controller: namecontrollerA,
+                                              decoration: InputDecoration(
+                                                hintText: adressname,
+                                                border: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.circular(13),
+                                                  borderSide:const BorderSide(color:  Color.fromARGB(255, 88, 88, 88))
+                                                )
+                                              ),
+                                            ),
+                                            ),
+                                            //const SizedBox(height: 10,),
+                                            Padding(
+                                            padding:const EdgeInsets.all(10),
+                                            child: TextField(
+                                              controller: detailcontroller,
+                                              decoration: InputDecoration(
+                                                hintText: "More info. eg, 2nd floor ,room 12",
+                                                border: OutlineInputBorder(
+                                                  borderRadius: BorderRadius.circular(13),
+                                                  borderSide:const BorderSide(color:  Color.fromARGB(255, 88, 88, 88))
+                                                )
+                                              ),
+                                            ),
+                                            ),
+                                            //const SizedBox(height: 20,),
+                                            TextButton(onPressed: ()async{
+                                              String state1 = "";
+                                              while(state1.isEmpty){
+                                                showcircleprogress(context);
+                                                state1 =await addAddress(
+                                                  namecontrollerA.text.isEmpty?adressname:namecontrollerA.text, 
+                                                  locationData.latitude!, 
+                                                  locationData.longitude!, 
+                                                  locationData.altitude!, 
+                                                  detailcontroller.text);
+                                              }
+                                              Navigator.pop(context);
+                                              if (state1 == "Success") {
+                                                Navigator.pop(context);
+                                                
+                                              }else{
+                                                showsnackbar(context, state1);
+                                              }
+                                            }, child:const Text("Save Address"))
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                 }
+                                 );
+                               }, 
+                               child:const Row(
+                                 children: [
+                                  Icon(Icons.location_on_outlined),
+                                    Text("Current Location"),
+                                 ],
+                               )),
+                               TextButton(onPressed: ()async{
+                                LocationData address;
+                                address = await getLocation(context);
+                                await openMap(address.latitude!, address.longitude!,context);
+                                
+                               },
+                                child:const Row(
+                                 children: [
+                                  Icon(Icons.map_outlined),
+                                   Text("Preview Current Location"),
+                                 ],
+                               )),
+                              ],
+                            ),
+                          ),
+                        );
+                      });
+                    }, 
+                    child:const Row(children: [Icon(Icons.add_location_alt_rounded),Text("Add New Adress")],)
+                    ),):
+                    ListView.builder(
+                      itemCount: addressBox.length,
+                      shrinkWrap: true,
+                      itemBuilder: (BuildContext context, int index) {
+                        return ListTile(
+                          title: Text("Address ${addressBox.get(addressBox.keys.toList()[index]).first}"),
+                          subtitle: Text(addressBox.get(addressBox.keys.toList()[index]).last),
+                          leading:IconButton(onPressed: (){
+                            //////edit the address name and delete features
+                          }, icon:const Icon(Icons.edit)),
+                          trailing: IconButton(onPressed: ()async{
+                            ////open the maps app for location preview
+                            double latitude = addressBox.get(addressBox.keys.toList()[index])[1];
+                            double longitude = addressBox.get(addressBox.keys.toList()[index])[2];
+                            await openMap(latitude, longitude, context);
+                          }, icon:const Icon(FontAwesomeIcons.mapLocation)),
+                        );
+                      },
                     );
-                  });
-                }, 
-                child:const Row(children: [Icon(Icons.add_location_alt_rounded),Text("Add New Adress")],)
-                ),):
-                ListView.builder(
-                  itemCount: addressBox.length,
-                  shrinkWrap: true,
-                  itemBuilder: (BuildContext context, int index) {
-                    return ListTile(
-                      title: Text("Address ${addressBox.keys.toList()[index]}"),
-                      leading:IconButton(onPressed: (){
-                        //////edit the address name and delete features
-                      }, icon:const Icon(Icons.edit)),
-                      trailing: IconButton(onPressed: (){
-                        ////open the maps app for location preview
-                      }, icon:const Icon(FontAwesomeIcons.mapLocation)),
-                    );
-                  },
+                  }
                 )
                 ;
               },
@@ -620,7 +811,13 @@ class _cartState extends State<cart> {
           ],
         ),
        ),
-        ListView.builder(
+        FutureBuilder(
+          future: getCart(),
+          builder: (BuildContext context, AsyncSnapshot snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator(),);
+            }
+            return ListView.builder(
           itemCount: images.length,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -648,6 +845,8 @@ class _cartState extends State<cart> {
                  )
                 ),
             );
+          },
+        );
           },
         ),
        // const SizedBox(height: 20,),

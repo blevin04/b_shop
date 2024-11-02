@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:location/location.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 showsnackbar(BuildContext context, String content) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -33,13 +34,13 @@ showcircleprogress(BuildContext context) {
        
       });
 }
-Future<LocationData> getLocation()async{
+Future<LocationData> getLocation(BuildContext context)async{
   Location location = new Location();
 
 bool _serviceEnabled;
 PermissionStatus _permissionGranted;
 LocationData _locationData;
-
+showcircleprogress(context);
 _serviceEnabled = await location.serviceEnabled();
 if (!_serviceEnabled) {
   _serviceEnabled = await location.requestService();
@@ -56,5 +57,17 @@ if (_permissionGranted == PermissionStatus.denied) {
   }
 }
 _locationData = await location.getLocation();
+Navigator.pop(context);
 return _locationData;
+}
+
+Future<void> openMap(double latitude, double longitude,BuildContext context) async {
+try {
+      const String markerLabel = 'Here';
+      final url = Uri.parse(
+          'geo:$latitude,$longitude?q=$latitude,$longitude($markerLabel)');
+      await launchUrl(url);
+    } catch (error) {
+      showsnackbar(context, error.toString());
+    }
 }

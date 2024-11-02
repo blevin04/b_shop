@@ -107,19 +107,33 @@ Future<String>updateProfile(
 }
 
 Future<String>addAddress(
+  String name,
   var latitude,
   var longitude,
   var altitude,
-  var other
+  String other
 )async{
   Box userBox = Hive.box("AddressBook");
   String state = "";
-  await firestore.collection("Users").doc(_user.uid).get().then((onValue)async{
+  try {
+    await firestore.collection("Users").doc(_user.uid).get().then((onValue)async{
     Map address = onValue.data()!["AddressBook"];
-    address.addAll({address.keys.last+1:[latitude,longitude,altitude,other]});
+   // print("${address.keys.length}....................");
+    List addre = [name,latitude,longitude,altitude,other];
+    int keyyy = address.keys.length+1;
+    //address.addAll({keyyy:addre});
+    final entery = <String,dynamic>{keyyy.toString():addre};
+    address.addAll(entery);
+    //print("$address ////////");
     await firestore.collection("Users").doc(_user.uid).update({"AddressBook":address});
-    userBox.add([latitude,longitude,altitude,other]);
+    userBox.add([name,latitude,longitude,altitude,other]);
+    //print(userBox.values);
   });
+  state = "Success";
+  } catch (e) {
+    state = e.toString();
+    print(state);
+  }
 return state;
 }
 Future<Map<dynamic,dynamic>>getCart()async{
@@ -135,4 +149,29 @@ Future<Map<dynamic,dynamic>>getCart()async{
   userBox.put("Cart", cart);
   }
   return cart;
+}
+
+Future<String>addtoCart(String itemId,int quantity,String name)async{
+  String state ="";
+  Map prevdata ={};
+    Box userBox = Hive.box("UserData");
+  await firestore.collection("Users").doc(_user.uid).get().then((onValue){
+    prevdata = onValue.data()!["Cart"];
+  });
+  if (prevdata.containsKey(itemId)) {
+    List info = prevdata[itemId];
+    info.last = quantity;
+    prevdata.update(itemId,(value)=>info);
+  }else{
+    prevdata.addAll({itemId:[name,quantity]});
+  }
+  if (userBox.containsKey("Cart")) {
+    Map pdata = userBox.get("Cart");
+    pdata.update(itemId, (value)=>[name,quantity],ifAbsent: ()=>[name,quantity]);
+    userBox.put(itemId, pdata);
+  }else{
+    userBox.put("Cart", {itemId:[name,quantity]});
+  }
+  await firestore.collection("Users").doc(_user.uid).update({"Cart":prevdata});
+  return state;
 }
