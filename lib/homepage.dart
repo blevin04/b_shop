@@ -1,14 +1,19 @@
+import 'dart:io';
+
 import 'package:b_shop/authPage.dart';
 import 'package:b_shop/backEndFunctions.dart';
 import 'package:b_shop/checkOut.dart';
 import 'package:b_shop/main.dart';
 import 'package:b_shop/utils.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:input_quantity/input_quantity.dart';
 import 'package:location/location.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Homepage extends StatefulWidget {
@@ -30,6 +35,30 @@ Map comDate = {
   "Exe Atta Mark 1 2kg":["2KG of exe unga for chapatis",160,20],
 };
 bool darkmode = false;
+Future<String> getImage(BuildContext context)async{
+  String image = "";
+  Permission.accessMediaLocation
+    .onDeniedCallback(() async {
+  Permission.accessMediaLocation.request();
+  if (await Permission.accessMediaLocation.isDenied) {
+    showsnackbar(context, "Permission denied");
+  }
+  if (await Permission.accessMediaLocation.isGranted) {
+    showsnackbar(context, 'Granted');
+  }
+});
+FilePickerResult? result = (await FilePicker.platform
+    .pickFiles(type: FileType.image,allowMultiple: false));
+if (result != null) {
+  image = result.files.single.path!;
+  
+ // setState(() {});
+}
+if (result == null) {
+  showsnackbar(context, 'no image chossen');
+}
+return image;
+}
 void saveTheme()async{
    darkmode?
      await Hive.box("Theme").put("DarkMode",0):
@@ -221,6 +250,15 @@ Widget home(){
                   String name = feedSnapshot.data![conKeys[index]]["Name"];
                   int priceN = feedSnapshot.data![conKeys[index]]["Price"].toInt();
                   Map <String,dynamic> items = {name:priceN};
+                  int ammountInCart = 0;
+                  bool incart = false;
+                  if ( Hive.box("UserData").containsKey("Cart")) {
+                     Map cart = Hive.box("UserData").get("Cart");
+                     if (cart.containsKey(conKeys[index])) {
+                       incart = true;
+                       ammountInCart = cart[conKeys[index]].last;
+                     }
+                  }
                    return Card(
                     elevation: 1,
                     //color: Colors.transparent,
@@ -250,52 +288,70 @@ Widget home(){
                           padding:const EdgeInsets.only(left: 5,right: 5),
                            child: Text("KSH $priceN",style:const TextStyle(fontWeight: FontWeight.bold,fontSize: 16),),
                          ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            IconButton(
-                              padding:const EdgeInsets.all(0),
-                              onPressed: ()async{
-                                showDialog(context: context, builder: (context){
-                                  return Dialog(
-                                    child: Container(
-                                      height: 100,
-                                      width: 200,
-                                      child: Column(
-                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                        crossAxisAlignment: CrossAxisAlignment.center,
-                                        children: [
-                                         
-                                        const Padding(
-                                           padding:  EdgeInsets.all(8.0),
-                                           child:  Text(
-                                            "Login or register to add items to cart",
-                                            softWrap: true,
-                                            overflow: TextOverflow.ellipsis,
-                                            ),
-                                         ),
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                        StatefulBuilder(
+                          builder: (context,cartState) {
+                            return Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                incart?
+                                IconButton(
+                                  padding:const EdgeInsets.all(0),
+                                  onPressed: ()async{
+                                    FirebaseAuth.instance.currentUser ==null?
+                                    showDialog(context: context, builder: (context){
+                                      return Dialog(
+                                        child: Container(
+                                          height: 100,
+                                          width: 200,
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                            crossAxisAlignment: CrossAxisAlignment.center,
                                             children: [
-                                              TextButton(onPressed: ()async{
-                                                Navigator.pop(context);
-                                               await Navigator.push(context, (MaterialPageRoute(builder: (context)=>const Authpage())));
-                                              }, child:const Text("Ok")),
-                                              TextButton(onPressed: (){
-                                                Navigator.pop(context);
-                                              }, child:const Text("Cancel"))
+                                             
+                                            const Padding(
+                                               padding:  EdgeInsets.all(8.0),
+                                               child:  Text(
+                                                "Login or register to add items to cart",
+                                                softWrap: true,
+                                                overflow: TextOverflow.ellipsis,
+                                                ),
+                                             ),
+                                              Row(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  TextButton(onPressed: ()async{
+                                                    Navigator.pop(context);
+                                                   await Navigator.push(context, (MaterialPageRoute(builder: (context)=>const Authpage())));
+                                                  }, child:const Text("Ok")),
+                                                  TextButton(onPressed: (){
+                                                    Navigator.pop(context);
+                                                  }, child:const Text("Cancel"))
+                                                ],
+                                              )
                                             ],
-                                          )
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                });
-                              }, icon:const Icon(Icons.add_shopping_cart,size: 20,)),
-                              TextButton(onPressed: (){
-                                Navigator.push(context, MaterialPageRoute(builder: (context)=>Checkout(items: items)));
-                              }, child:const Text("Buy Now"))
-                          ],
+                                          ),
+                                        ),
+                                      );
+                                    }):
+                                    await addtoCart(conKeys[index], ammountInCart, name,priceN.toDouble());
+                                     cartState((){
+                                      ammountInCart++;
+                                      incart = true;
+                                     });
+                                    ;
+                                  }, icon:const Icon(Icons.add_shopping_cart,size: 20,)):
+                                  InputQty.int(
+                                    onQtyChanged: (val)async {
+                                    ammountInCart = val;
+                                   await addtoCart(conKeys[index], val, name,priceN.toDouble());
+                                  },
+                                  ),
+                                  TextButton(onPressed: (){
+                                    Navigator.push(context, MaterialPageRoute(builder: (context)=>Checkout(items: items)));
+                                  }, child:const Text("Buy Now"))
+                              ],
+                            );
+                          }
                         )
                       ],
                     ),
@@ -393,7 +449,6 @@ class _cartState extends State<cart> {
               child: ListTile(
                   leading:FutureBuilder(
                     future: getDp(),
-                    
                     builder: (BuildContext context, AsyncSnapshot snapshotdp) {
                       if (snapshotdp.connectionState == ConnectionState.waiting) {
                         return const CircleAvatar(
@@ -447,6 +502,12 @@ class _cartState extends State<cart> {
                                       );
                                       }
                                       print(snapshotdp.data);
+                                      if (imagePath.isNotEmpty) {
+                                        return  CircleAvatar(
+                                        radius: 50,
+                                        backgroundImage: FileImage(File(imagePath)),
+                                    );
+                                      }
                                       return  CircleAvatar(
                                     radius: 50,
                                     backgroundImage: MemoryImage(snapshotdp.data),
@@ -458,8 +519,10 @@ class _cartState extends State<cart> {
                                     bottom: -14,
                                     child: IconButton(
                                       splashColor: Colors.transparent,
-                                      onPressed: (){
-                                        
+                                      onPressed: ()async{
+                                        imagePath = await getImage(context);
+                                        setState(() {
+                                        });
                                       }, 
                                       icon:const Icon(Icons.change_circle)),
                                   )
@@ -647,8 +710,6 @@ class _cartState extends State<cart> {
                             ),
                           );
                         });
-
-
                       }, icon:const Icon(Icons.add)))
                 ],
               ),
@@ -789,10 +850,11 @@ class _cartState extends State<cart> {
                       shrinkWrap: true,
                       itemBuilder: (BuildContext context, int index) {
                         return ListTile(
-                          title: Text("Address ${addressBox.get(addressBox.keys.toList()[index]).first}"),
+                          title: Text("${addressBox.get(addressBox.keys.toList()[index]).first}"),
                           subtitle: Text(addressBox.get(addressBox.keys.toList()[index]).last),
                           leading:IconButton(onPressed: (){
                             //////edit the address name and delete features
+                            
                           }, icon:const Icon(Icons.edit)),
                           trailing: IconButton(onPressed: ()async{
                             ////open the maps app for location preview
@@ -811,43 +873,73 @@ class _cartState extends State<cart> {
           ],
         ),
        ),
-        FutureBuilder(
-          future: getCart(),
-          builder: (BuildContext context, AsyncSnapshot snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator(),);
-            }
-            return ListView.builder(
-          itemCount: images.length,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemBuilder: (BuildContext context, int index) {
-           List names = comDate.keys.toList();
-            return Card(
-              elevation: 6,
-              child: SizedBox(
-                //height: 150,
-                child:
-                 ListTile(
-                  //minTileHeight: 100,
-                  contentPadding:const EdgeInsets.all(5),
-                  leading: Image(image: NetworkImage(images[index])),
-                  title: Text(names[index]),
-                  subtitle: Text(comDate[names[index]][0],softWrap: true,maxLines: 3,overflow: TextOverflow.ellipsis,),
-                  trailing: Column(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      Text("KSH ${comDate[names[index]][1].toString()}",style:const TextStyle(fontWeight: FontWeight.bold,fontSize: 16),),
-                      Expanded(child: TextButton(onPressed: (){}, child:const Text("Remove",style: TextStyle(color: Colors.red,fontWeight:FontWeight.w500,decoration: TextDecoration.underline),))),
-
-                    ],
-                  ),
-                 )
-                ),
+        ListenableBuilder(
+          listenable: Hive.box("UserData").listenable(),
+          builder: (context,child) {
+            return FutureBuilder(
+              future: getCart(),
+              builder: (BuildContext context, AsyncSnapshot snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(),);
+                }
+                print(snapshot.data);
+                Map cart = snapshot.data!;
+                List names = [];
+                List quantities = [];
+                List prices = [];
+                List cartId = [];
+               cart.forEach((key,value){
+                names.add(value.first);
+                quantities.add(value.last);
+                prices.add(value[1]);
+                cartId.add(key);
+               });
+                return snapshot.data.isNotEmpty? 
+                ListView.builder(
+              itemCount: snapshot.data.length,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemBuilder: (BuildContext context, int index) {
+                return Card(
+                  elevation: 6,
+                  child: SizedBox(
+                    //height: 150,
+                    child:
+                     ListTile(
+                      //minTileHeight: 100,
+                      contentPadding:const EdgeInsets.all(5),
+                      leading: Image(image: NetworkImage(images[index])),
+                       title: Text(names[index]),
+                       subtitle: Text("X ${quantities[index]}",softWrap: true,maxLines: 3,overflow: TextOverflow.ellipsis,),
+                      trailing: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Text("KSH ${(prices[index]*quantities[index])}",style:const TextStyle(fontWeight: FontWeight.bold,fontSize: 16),),
+                          Expanded(child: TextButton(onPressed: ()async{
+                            await removeFromCart(cartId[index]);
+                          }, child:const Text("Remove",style: TextStyle(color: Colors.red,fontWeight:FontWeight.w500,decoration: TextDecoration.underline),))),
+            
+                        ],
+                      ),
+                     )
+                    ),
+                );
+              },
+            ):
+           const Center(
+              child: Column(
+                children: [
+                  SizedBox(height: 20,),
+                  Icon(Icons.shopping_cart_sharp),
+                  Text("your Cart is empty"),
+                  SizedBox(height: 20,),
+                ],
+              ),
+            )
+            ;
+              },
             );
-          },
-        );
-          },
+          }
         ),
        // const SizedBox(height: 20,),
         Card(

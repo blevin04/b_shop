@@ -151,7 +151,7 @@ Future<Map<dynamic,dynamic>>getCart()async{
   return cart;
 }
 
-Future<String>addtoCart(String itemId,int quantity,String name)async{
+Future<String>addtoCart(String itemId,int quantity,String name,double price)async{
   String state ="";
   Map prevdata ={};
     Box userBox = Hive.box("UserData");
@@ -163,15 +163,31 @@ Future<String>addtoCart(String itemId,int quantity,String name)async{
     info.last = quantity;
     prevdata.update(itemId,(value)=>info);
   }else{
-    prevdata.addAll({itemId:[name,quantity]});
+    final ddd = <String,dynamic>{itemId:[name,price,quantity]};
+    prevdata.addAll(ddd);
   }
+  print(prevdata);
   if (userBox.containsKey("Cart")) {
     Map pdata = userBox.get("Cart");
-    pdata.update(itemId, (value)=>[name,quantity],ifAbsent: ()=>[name,quantity]);
+    pdata.update(itemId, (value)=>[name,price,quantity],ifAbsent: ()=>[name,price,quantity]);
     userBox.put(itemId, pdata);
   }else{
-    userBox.put("Cart", {itemId:[name,quantity]});
+    userBox.put("Cart", {itemId:[name,price,quantity]});
   }
   await firestore.collection("Users").doc(_user.uid).update({"Cart":prevdata});
+  return state;
+}
+
+Future<String> removeFromCart(String itemId)async{
+  String state = "";
+   Box userBox = Hive.box("UserData");
+  await firestore.collection("Users").doc(_user.uid).get().then((onValue)async{
+    Map cart = onValue.data()!["Cart"];
+    cart.remove(itemId);
+    await firestore.collection("Users").doc(_user.uid).update({"Cart":cart});
+  });
+  Map cart =userBox.get("Cart");
+  cart.remove(itemId);
+  userBox.put("Cart", cart);
   return state;
 }
