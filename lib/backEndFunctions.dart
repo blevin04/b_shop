@@ -68,8 +68,8 @@ Future<Map<dynamic,dynamic>> getUser()async{
 
 Future<Uint8List>getDp()async{
   Uint8List? dp = Uint8List(0);
-  Box userBox = Hive.box("UserDate");
-  if (userBox.isNotEmpty) {
+  Box userBox = Hive.box("UserData");
+  if (userBox.containsKey("Dp")) {
     return userBox.get("Dp");
   }
   try {
