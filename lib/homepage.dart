@@ -696,15 +696,15 @@ class _cartState extends State<cart> {
                                                 );
                                               }
                                               if((snapshotdp.data == null|| snapshotdp.data.isEmpty) && imagePath.isEmpty){
-                                                print("domnnnnn");
+                                                //print("domnnnnn");
                                                 return const CircleAvatar(
                                                 radius: 50,
                                               child: Icon(Icons.shopping_cart,size: 30,),
                                               );
                                               }
-                                              print(snapshotdp.data);
+                                              //print(snapshotdp.data);
                                               if (imagePath.isNotEmpty) {
-                                                print("object");
+                                                //print("object");
                                                 return  CircleAvatar(
                                                 radius: 50,
                                                 backgroundImage: FileImage(File(imagePath)),
@@ -1087,7 +1087,7 @@ class _cartState extends State<cart> {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator(),);
                 }
-                print(snapshot.data);
+                //print(snapshot.data);
                 Map cart = snapshot.data!;
                 List names = [];
                 List quantities = [];
