@@ -21,7 +21,26 @@ exports.initOrder = functions.firestore.onDocumentCreated(
         const price = orderdata.data().price;
         const number = orderdata.data().Number;
         const orderNum = orderdata.data().orderNumber;
-        
+        //////trigger mpesa //////////
+        let headers = new Headers();
+        headers.append("Content-Type", "application/json");
+        headers.append("Authorization", "Bearer EKgHyrx5gsLahKAsATP1PTvwLGMF");
+        ​
+        fetch("https://sandbox.safaricom.co.ke/mpesa/c2b/v1/simulate", {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+            "ShortCode": 3080510,
+            "CommandID": "CustomerBuyGoodsOnline",
+            "amount": price,
+            "MSISDN": number,
+            "BillRefNumber": orderNum,
+        })
+        })
+        .then(response => response.text())
+        .then(result => console.log(result))
+        .catch(error => console.log(error));
+
     }
 )
 // Create and deploy your first functions
