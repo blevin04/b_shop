@@ -1,10 +1,12 @@
 
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:b_shop/models.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:hive/hive.dart';
+import 'package:uuid/uuid.dart';
 
 FirebaseFirestore firestore = FirebaseFirestore.instance;
 final storage = FirebaseStorage.instance.ref();
@@ -190,5 +192,34 @@ Future<String> removeFromCart(String itemId)async{
   Map cart =userBox.get("Cart");
   cart.remove(itemId);
   userBox.put("Cart", cart);
+  return state;
+}
+
+Future<String>placeOrder(
+  Map<String,dynamic>items,
+  List location,
+  bool ondelivery,
+  double price,
+  String paymentnum,
+)async{
+  String state = "";
+  try {
+    String orderNumber =const Uuid().v1();
+    orderModel order = orderModel(
+      items: items, 
+      location: location, 
+      orderNumber: orderNumber, 
+      owner: _user.uid, 
+      paymentState: false, 
+      delivered: false, 
+      ondelivery: ondelivery,
+      price: price,
+      paymentNum: paymentnum,
+      );
+      await firestore.collection("orders").doc(orderNumber).set(order.toJyson());
+      state = "Success";
+  } catch (e) {
+    state = e.toString();
+  }
   return state;
 }
