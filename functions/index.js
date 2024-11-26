@@ -11,49 +11,10 @@
 // const logger = require("firebase-functions/logger");
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const axios = require("axios");
-// const express = require("express");
-// const bodyParser = require("body-parser");
-// const cors = require("cors");
+// const {response} = require("express");
+// const axios = require("axios");
 admin.initializeApp();
-
-// const app = express();
-// app.use(cors());
-// app.use(bodyParser.json());
-
-// // M-Pesa Confirmation Callback Endpoint
-// app.post("/mpesa/confirmation", async (req, res) => {
-//   try {
-//     const callbackData = req.body;
-
-//     // Log the callback data
-//     console.log("M-Pesa Confirmation Data:", callbackData);
-
-//     // Store the callback data in Firestore
-//     const ref = admin.firestore().collection("mpesaConfirmations");
-//     await ref.add({
-//       ...callbackData,
-//       timestamp: admin.firestore.FieldValue.serverTimestamp(),
-//     });
-
-//     // Respond to Safaricom with success
-//     res.status(200).send({
-//       ResponseCode: "00000000",
-//       ResponseDesc: "Success",
-//     });
-//   } catch (error) {
-//     console.error("Error processing confirmation:", error);
-//     res.status(500).send({
-//       ResponseCode: "1",
-//       ResponseDesc: "Failed",
-//     });
-//   }
-// });
-
-// // Export the function
-// exports.paymentCallback = functions.https.onRequest(app);
-
-// const LIPIA_API_KEY = "7acd8e1c198313db8169389635ddaa1a52d7b095";
+const LIPIA_API_KEY ="7acd8e1c198313db8169389635ddaa1a52d7b095";
 exports.initPayment = functions.firestore.onDocumentCreated(
     "orders/{orderNum}/",
     async (snapshot) => {
@@ -64,35 +25,49 @@ exports.initPayment = functions.firestore.onDocumentCreated(
       // trigger lipia online //
       const apiUrl = "https://lipia-api.kreativelabske.com/api/request/stk";
       const headers = {
-        "Authorization": "Bearer 7acd8e1c198313db8169389635ddaa1a52d7b095",
+        "Authorization": `Bearer ${LIPIA_API_KEY}`,
         "Content-Type": "application/json",
       };
         // Define the payload
-      const payload = {
-        number,
-        price,
-      };
+      // const payload = {
+      //   number,
+      //   price,
+      // };
       try {
         // Send the payment request
-        const response = await axios.post(apiUrl, payload, {headers});
+        // const response = await axios.post(apiUrl, payload, {headers});
+        fetch(apiUrl, {
+          method: "POST",
+          body: JSON.stringify(
+              {"phone": number,
+                "amount": price},
+          ),
+          headers: headers,
 
-        // Log the successful response
-        console.log("Payment processed successfully:", response.data);
-
-        // Update Firestore document with payment status
-        await snapshot.ref.update({
-          PaymentState: "success",
-          lipiaResponse: response.data,
+        }).then( async (response) => {
+          console.log("Payment processed successfully:", response);
+          await admin.firestore().collection("orders").
+              doc(snapshot.params.orderNum).update({
+                "PaymentState": "Success",
+                "LipiaResponce": response.data.data(),
+              });
         });
+        // // Log the successful response
+        // console.log("Payment processed successfully:", response.data);
+
+        // await snapshot.ref.update({
+        //   PaymentState: "success",
+        //   lipiaResponse: response.data,
+        // });
       } catch (error) {
         // Handle errors and log them
         console.error("Error processing payment:",
             (error.response.data || error.message));
         // Update Firestore document with error status
-        await snapshot.ref.update({
-          PaymentState: "failed",
-          error: error.response.data || error.message,
-        });
+        // await snapshot.ref.update({
+        //   PaymentState: "failed",
+        //   error: error.response.data || error.message,
+        // });
       }
     },
 );

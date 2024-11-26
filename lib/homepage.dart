@@ -1151,11 +1151,18 @@ class _cartState extends State<cart> {
           margin:const EdgeInsets.all(20),
           child: InkWell(
             borderRadius: BorderRadius.circular(10),
-            onTap: (){
+            onTap: ()async{
               if (selectedaddress) {
                 Navigator.push(context, MaterialPageRoute(builder: (context)=>Checkout(items: items,)));
               }else{
-                showsnackbar(context, "Select Address");
+                //showsnackbar(context, "Select Address");
+                await placeOrder(
+                  items, 
+                  ["location"], 
+                  false, 
+                  5, 
+                  "0745222065"
+                  );
               }
             },
             splashColor: const Color.fromARGB(56, 33, 149, 243),
