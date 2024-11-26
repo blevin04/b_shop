@@ -11,76 +11,91 @@
 // const logger = require("firebase-functions/logger");
 const functions = require("firebase-functions");
 const admin = require("firebase-admin");
-const express = require("express");
-const bodyParser = require("body-parser");
-const cors = require("cors");
+const axios = require("axios");
+// const express = require("express");
+// const bodyParser = require("body-parser");
+// const cors = require("cors");
 admin.initializeApp();
 
+// const app = express();
+// app.use(cors());
+// app.use(bodyParser.json());
 
-const app = express();
-app.use(cors());
-app.use(bodyParser.json());
+// // M-Pesa Confirmation Callback Endpoint
+// app.post("/mpesa/confirmation", async (req, res) => {
+//   try {
+//     const callbackData = req.body;
 
-// M-Pesa Confirmation Callback Endpoint
-app.post("/mpesa/confirmation", async (req, res) => {
-  try {
-    const callbackData = req.body;
+//     // Log the callback data
+//     console.log("M-Pesa Confirmation Data:", callbackData);
 
-    // Log the callback data
-    console.log("M-Pesa Confirmation Data:", callbackData);
+//     // Store the callback data in Firestore
+//     const ref = admin.firestore().collection("mpesaConfirmations");
+//     await ref.add({
+//       ...callbackData,
+//       timestamp: admin.firestore.FieldValue.serverTimestamp(),
+//     });
 
-    // Store the callback data in Firestore
-    const ref = admin.firestore().collection("mpesaConfirmations");
-    await ref.add({
-      ...callbackData,
-      timestamp: admin.firestore.FieldValue.serverTimestamp(),
-    });
+//     // Respond to Safaricom with success
+//     res.status(200).send({
+//       ResponseCode: "00000000",
+//       ResponseDesc: "Success",
+//     });
+//   } catch (error) {
+//     console.error("Error processing confirmation:", error);
+//     res.status(500).send({
+//       ResponseCode: "1",
+//       ResponseDesc: "Failed",
+//     });
+//   }
+// });
 
-    // Respond to Safaricom with success
-    res.status(200).send({
-      ResponseCode: "00000000",
-      ResponseDesc: "Success",
-    });
-  } catch (error) {
-    console.error("Error processing confirmation:", error);
-    res.status(500).send({
-      ResponseCode: "1",
-      ResponseDesc: "Failed",
-    });
-  }
-});
+// // Export the function
+// exports.paymentCallback = functions.https.onRequest(app);
 
-// Export the function
-exports.paymentCallback = functions.https.onRequest(app);
-// exports.initOrder = functions.firestore.onDocumentCreated(
-//     "orders/{orderNum}",
-//     (snapshot)=>{
-//         const orderdata = snapshot.data;
-//         const price = orderdata.data().price;
-//         const number = orderdata.data().Number;
-//         const orderNum = orderdata.data().orderNumber;
-//         //////trigger mpesa //////////
-//         let headers = new Headers();
-//         headers.append("Content-Type", "application/json");
-//         headers.append("Authorization",
-//         "Bearer EKgHyrx5gsLahKAsATP1PTvwLGMF");
-//         fetch("https://sandbox.safaricom.co.ke/mpesa/c2b/v1/simulate", {
-//         method: 'POST',
-//         headers,
-//         body: JSON.stringify({
-//             "ShortCode": 3080510,
-//             "CommandID": "CustomerBuyGoodsOnline",
-//             "amount": price,
-//             "MSISDN": number,
-//             "BillRefNumber": orderNum,
-//         })
-//         })
-//         .then(response => response.text())
-//         .then(result => console.log(result))
-//         .catch(error => console.log(error));
+// const LIPIA_API_KEY = "7acd8e1c198313db8169389635ddaa1a52d7b095";
+exports.initPayment = functions.firestore.onDocumentCreated(
+    "orders/{orderNum}/",
+    async (snapshot) => {
+      const orderdata = snapshot.data;
+      const price = orderdata.data().price;
+      const number = orderdata.data().Number;
+      // const orderNum = orderdata.data().orderNumber;
+      // trigger lipia online //
+      const apiUrl = "https://lipia-api.kreativelabske.com/api/request/stk";
+      const headers = {
+        "Authorization": "Bearer 7acd8e1c198313db8169389635ddaa1a52d7b095",
+        "Content-Type": "application/json",
+      };
+        // Define the payload
+      const payload = {
+        number,
+        price,
+      };
+      try {
+        // Send the payment request
+        const response = await axios.post(apiUrl, payload, {headers});
 
-//     }
-// )
+        // Log the successful response
+        console.log("Payment processed successfully:", response.data);
+
+        // Update Firestore document with payment status
+        await snapshot.ref.update({
+          PaymentState: "success",
+          lipiaResponse: response.data,
+        });
+      } catch (error) {
+        // Handle errors and log them
+        console.error("Error processing payment:",
+            (error.response.data || error.message));
+        // Update Firestore document with error status
+        await snapshot.ref.update({
+          PaymentState: "failed",
+          error: error.response.data || error.message,
+        });
+      }
+    },
+);
 // Create and deploy your first functions
 // https://firebase.google.com/docs/functions/get-started
 

@@ -3,7 +3,6 @@ class orderModel {
   final String orderNumber;
   final String owner ;
   final List location;
-  final bool paymentState;
   final Map items;
   final bool delivered;
   final bool ondelivery;
@@ -14,7 +13,6 @@ class orderModel {
     required this.location,
     required this.orderNumber,
     required this.owner,
-    required this.paymentState,
     required this.delivered,
     required this.ondelivery,
     required this.price,
@@ -26,7 +24,7 @@ class orderModel {
     "delivered":delivered,
     "items":items,
     "orderNumber":orderNumber,
-    "PaymentState":paymentState,
+    "PaymentState":"Waiting",
     "OndeliveryPayment":ondelivery,
     "price":price,
     "Number":paymentNum
