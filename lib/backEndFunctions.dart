@@ -195,14 +195,14 @@ Future<String> removeFromCart(String itemId)async{
   return state;
 }
 
-Future<String>placeOrder(
-  Map<String,dynamic>items,
+Future<List>placeOrder(
+  Map items,
   List location,
   bool ondelivery,
   double price,
   String paymentnum,
 )async{
-  String state = "";
+  List state = [];
   try {
     String orderNumber =const Uuid().v1();
     orderModel order = orderModel(
@@ -216,9 +216,10 @@ Future<String>placeOrder(
       paymentNum: paymentnum,
       );
       await firestore.collection("orders").doc(orderNumber).set(order.toJyson());
-      state = "Success";
+      state.add("placed");
+      state.add(orderNumber);
   } catch (e) {
-    state = e.toString();
+    state.add(e.toString());
   }
   return state;
 }

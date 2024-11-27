@@ -265,7 +265,7 @@ Widget home(){
                   List conKeys = feedSnapshot.data!.keys.toList();
                   String name = feedSnapshot.data![conKeys[index]]["Name"];
                   int priceN = feedSnapshot.data![conKeys[index]]["Price"].toInt();
-                  Map <String,dynamic> items = {name:priceN};
+                  Map <String,dynamic> items = {conKeys[index]:[name,priceN,1]};
                   int ammountInCart = 0;
                   bool incart = false;
                   if ( Hive.box("UserData").containsKey("Cart")) {
@@ -364,7 +364,47 @@ Widget home(){
                                   },
                                   ),
                                   TextButton(onPressed: (){
-                                    Navigator.push(context, MaterialPageRoute(builder: (context)=>Checkout(items: items)));
+                                    List locationdata = [];
+                                    showDialog(context: context, builder: (context){
+                                      return Dialog(
+                                        child: Container(
+                                          height: MediaQuery.of(context).size.height/2,
+                                          child: FutureBuilder(
+                                            future: Hive.openBox("AddressBook"),
+                                            builder: (BuildContext context, AsyncSnapshot snapshot) {
+                                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                                return const Center(child: CircularProgressIndicator(),);
+                                              }
+                                              Box addressbox = Hive.box("AddressBook");
+                                              
+                                              return ListView.builder(
+                                                itemCount: addressbox.length,
+                                                shrinkWrap: true,
+                                                itemBuilder: (BuildContext context, int index) {
+                                                  String nameAdress = addressbox.get(addressbox.keys.toList()[index]).first;
+                                                  String other = addressbox.get(addressbox.keys.toList()[index]).last;
+                                                  double latitude = addressbox.get(addressbox.keys.toList()[index])[1];
+                                                  double longitude = addressbox.get(addressbox.keys.toList()[index])[2];
+                                                  return ListTile(
+                                                    onTap: ()async{
+                                                      locationdata = addressbox.get(addressbox.keys.toList()[index]);
+                                                      await Navigator.pushReplacement(context, (MaterialPageRoute(builder: (context)=>Checkout(items: items, location: locationdata))));
+                                                    },
+                                                    title: Text(nameAdress),
+                                                    subtitle: Text(other),
+                                                    trailing: IconButton(onPressed: ()async{
+                                                      await openMap(latitude, longitude, context);
+                                                    }, 
+                                                    icon:const Icon(FontAwesomeIcons.mapLocation)
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    });
                                   }, child:const Text("Buy Now"))
                               ],
                             );
@@ -441,7 +481,7 @@ class _searchState extends State<search> {
                   List conKeys = filteredFeed.keys.toList();
                   String name = filteredFeed[conKeys[index]]["Name"];
                   int priceN = filteredFeed[conKeys[index]]["Price"].toInt();
-                  Map <String,dynamic> items = {name:priceN};
+                  Map <String,dynamic> items = {conKeys[index]:[name,priceN,1]};
                   int ammountInCart = 0;
                   bool incart = false;
                   if ( Hive.box("UserData").containsKey("Cart")) {
@@ -538,8 +578,50 @@ class _searchState extends State<search> {
                                    await addtoCart(conKeys[index], val, name,priceN.toDouble());
                                   },
                                   ),
-                                  TextButton(onPressed: (){
-                                    Navigator.push(context, MaterialPageRoute(builder: (context)=>Checkout(items: items)));
+                                  TextButton(onPressed: ()async{
+                                    List locationdata = [];
+                                    showDialog(context: context, builder: (context){
+                                      return Dialog(
+                                        child: Container(
+                                          height: MediaQuery.of(context).size.height/2,
+                                          child: FutureBuilder(
+                                            future: Hive.openBox("AddressBook"),
+                                            builder: (BuildContext context, AsyncSnapshot snapshot) {
+                                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                                return const Center(child: CircularProgressIndicator(),);
+                                              }
+                                              Box addressbox = Hive.box("AddressBook");
+                                              
+                                              return ListView.builder(
+                                                itemCount: addressbox.length,
+                                                shrinkWrap: true,
+                                                itemBuilder: (BuildContext context, int index) {
+                                                  String nameAdress = addressbox.get(addressbox.keys.toList()[index]).first;
+                                                  String other = addressbox.get(addressbox.keys.toList()[index]).last;
+                                                  double latitude = addressbox.get(addressbox.keys.toList()[index])[1];
+                                                  double longitude = addressbox.get(addressbox.keys.toList()[index])[2];
+                                                  return ListTile(
+                                                    onTap: ()async{
+                                                      locationdata = addressbox.get(addressbox.keys.toList()[index]);
+                                                      await Navigator.pushReplacement(context, (MaterialPageRoute(builder: (context)=>Checkout(items: items, location: locationdata))));
+                                                    },
+                                                    title: Text(nameAdress),
+                                                    subtitle: Text(other),
+                                                    trailing: IconButton(onPressed: ()async{
+                                                      await openMap(latitude, longitude, context);
+                                                    }, 
+                                                    icon:const Icon(FontAwesomeIcons.mapLocation)
+                                                    ),
+                                                  );
+                                                },
+                                              );
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    });
+
+                                    
                                   }, child:const Text("Buy Now"))
                               ],
                             );
@@ -580,6 +662,7 @@ class cart extends StatefulWidget {
   State<cart> createState() => _cartState();
 }
  bool selectedaddress = false;
+ List selectedAddress = [];
  Map<String,dynamic> items = {};
  void openCartbox()async{
  await Hive.openBox("Cart");
@@ -936,7 +1019,8 @@ class _cartState extends State<cart> {
                   listenable: addressBox.listenable(),
                   builder: (context,child) {
                     return addressBox.isEmpty?
-                    Center(child: TextButton(onPressed: ()async{
+                    Center(child: TextButton(
+                      onPressed: ()async{
                       showDialog(context: context, 
                       builder: (context){
                         return Dialog(
@@ -1054,7 +1138,10 @@ class _cartState extends State<cart> {
                       itemBuilder: (BuildContext context, int index) {
                         return ListTile(
                           onTap:(){
-
+                            // double latitude = addressBox.get(addressBox.keys.toList()[index])[1];
+                            // double longitude = addressBox.get(addressBox.keys.toList()[index])[2];
+                            selectedaddress = true;
+                            selectedAddress=addressBox.get(addressBox.keys.toList()[index]);
                           },
                           title: Text("${addressBox.get(addressBox.keys.toList()[index]).first}"),
                           subtitle: Text(addressBox.get(addressBox.keys.toList()[index]).last),
@@ -1099,7 +1186,9 @@ class _cartState extends State<cart> {
                 quantities.add(value.last);
                 prices.add(value[1]);
                 cartId.add(key);
+                items.addAll({key:[value.first,value[1],value.last]});
                });
+               
                 return snapshot.data.isNotEmpty? 
                 ListView.builder(
               itemCount: snapshot.data.length,
@@ -1154,7 +1243,7 @@ class _cartState extends State<cart> {
             borderRadius: BorderRadius.circular(10),
             onTap: ()async{
               if (selectedaddress) {
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>Checkout(items: items,)));
+                Navigator.push(context, MaterialPageRoute(builder: (context)=>Checkout(items: items,location: selectedAddress,)));
               }else{
                 showsnackbar(context, "Select Address");
                 // await placeOrder(
