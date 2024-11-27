@@ -1,10 +1,11 @@
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class orderModel {
   final String orderNumber;
   final String owner ;
   final List location;
   final Map items;
-  final bool delivered;
   final bool ondelivery;
   final double price;
   final String paymentNum;
@@ -13,7 +14,6 @@ class orderModel {
     required this.location,
     required this.orderNumber,
     required this.owner,
-    required this.delivered,
     required this.ondelivery,
     required this.price,
     required this.paymentNum,
@@ -21,12 +21,13 @@ class orderModel {
   Map<String,dynamic> toJyson()=>{
     "Owner":owner,
     "Location":location,
-    "delivered":delivered,
+    "delivered":false,
     "items":items,
     "orderNumber":orderNumber,
     "PaymentState":"Waiting",
     "OndeliveryPayment":ondelivery,
     "price":price,
-    "Number":paymentNum
+    "Number":paymentNum,
+    "time":FieldValue.serverTimestamp(),
   };
 }

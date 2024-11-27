@@ -62,10 +62,10 @@ exports.initPayment = functions.firestore.onDocumentCreated(
       } catch (error) {
         // Handle errors and log them
         await admin.firestore().collection("orders").
-          doc(snapshot.params.orderNum).update({
-            "PaymentState": "failed",
-            "LipiaResponce": response.data.data(),
-          });
+            doc(snapshot.params.orderNum).update({
+              "PaymentState": "failed",
+              "LipiaResponce": error.data,
+            });
         console.error("Error processing payment:",
             (error.response.data || error.message));
         // Update Firestore document with error status
