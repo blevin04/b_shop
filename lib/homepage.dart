@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:b_shop/authPage.dart';
 import 'package:b_shop/backEndFunctions.dart';
 import 'package:b_shop/checkOut.dart';
@@ -9,7 +8,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:input_quantity/input_quantity.dart';
 import 'package:location/location.dart';
@@ -1055,6 +1053,9 @@ class _cartState extends State<cart> {
                       shrinkWrap: true,
                       itemBuilder: (BuildContext context, int index) {
                         return ListTile(
+                          onTap:(){
+
+                          },
                           title: Text("${addressBox.get(addressBox.keys.toList()[index]).first}"),
                           subtitle: Text(addressBox.get(addressBox.keys.toList()[index]).last),
                           leading:IconButton(onPressed: (){
@@ -1155,14 +1156,14 @@ class _cartState extends State<cart> {
               if (selectedaddress) {
                 Navigator.push(context, MaterialPageRoute(builder: (context)=>Checkout(items: items,)));
               }else{
-                //showsnackbar(context, "Select Address");
-                await placeOrder(
-                  items, 
-                  ["location"], 
-                  false, 
-                  5, 
-                  "0745222065"
-                  );
+                showsnackbar(context, "Select Address");
+                // await placeOrder(
+                //   items, 
+                //   ["location"], 
+                //   false, 
+                //   5, 
+                //   "0745222065"
+                //   );
               }
             },
             splashColor: const Color.fromARGB(56, 33, 149, 243),
