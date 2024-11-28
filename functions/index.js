@@ -21,6 +21,7 @@ exports.initPayment = functions.firestore.onDocumentCreated(
       const orderdata = snapshot.data;
       const price = orderdata.data().price;
       const number = orderdata.data().Number;
+      const paymentOndelivery = orderdata.data().OndeliveryPayment;
       // const orderNum = orderdata.data().orderNumber;
       // trigger lipia online //
       const apiUrl = "https://lipia-api.kreativelabske.com/api/request/stk";
@@ -33,46 +34,51 @@ exports.initPayment = functions.firestore.onDocumentCreated(
       //   number,
       //   price,
       // };
-      try {
-        // Send the payment request
-        // const response = await axios.post(apiUrl, payload, {headers});
-        fetch(apiUrl, {
-          method: "POST",
-          body: JSON.stringify(
-              {"phone": number,
-                "amount": price},
-          ),
-          headers: headers,
+      if (paymentOndelivery == false) {
+        try {
+          // Send the payment request
+          // const response = await axios.post(apiUrl, payload, {headers});
+          fetch(apiUrl, {
+            method: "POST",
+            body: JSON.stringify(
+                {"phone": number,
+                  "amount": price},
+            ),
+            headers: headers,
 
-        }).then( async (response) => {
-          console.log("Payment processed successfully:", response);
+          }).then( async (response) => {
+            return response.json();
+          }).then(async (datas)=>{
+            const data = datas.data;
+            console.log("Payment processed successfully:", datas);
+            await admin.firestore().collection("orders").
+                doc(snapshot.params.orderNum).update({
+                  "PaymentState": "Success",
+                  "LipiaOnlineResponse": data,
+                });
+          });
+          // // Log the successful response
+          // console.log("Payment processed successfully:", response.data);
+
+          // await snapshot.ref.update({
+          //   PaymentState: "success",
+          //   lipiaResponse: response.data,
+          // });
+        } catch (error) {
+          // Handle errors and log them
           await admin.firestore().collection("orders").
               doc(snapshot.params.orderNum).update({
-                "PaymentState": "Success",
-                "LipiaResponce": response.data.data(),
+                "PaymentState": "failed",
+                "LipiaResponce": error.data,
               });
-        });
-        // // Log the successful response
-        // console.log("Payment processed successfully:", response.data);
-
-        // await snapshot.ref.update({
-        //   PaymentState: "success",
-        //   lipiaResponse: response.data,
-        // });
-      } catch (error) {
-        // Handle errors and log them
-        await admin.firestore().collection("orders").
-            doc(snapshot.params.orderNum).update({
-              "PaymentState": "failed",
-              "LipiaResponce": error.data,
-            });
-        console.error("Error processing payment:",
-            (error.response.data || error.message));
-        // Update Firestore document with error status
-        // await snapshot.ref.update({
-        //   PaymentState: "failed",
-        //   error: error.response.data || error.message,
-        // });
+          console.error("Error processing payment:",
+              (error.response.data || error.message));
+          // Update Firestore document with error status
+          // await snapshot.ref.update({
+          //   PaymentState: "failed",
+          //   error: error.response.data || error.message,
+          // });
+        }
       }
     },
 );

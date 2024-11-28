@@ -222,3 +222,42 @@ Future<List>placeOrder(
   }
   return state;
 }
+
+Future<Map<String,dynamic>> getOpenOrders()async{
+  Map<String,dynamic> open = {};
+  await Hive.openBox("orders");
+  if (Hive.box("orders").containsKey("open")) {
+    return Hive.box("orders").get("open");
+  }
+  else{
+    await firestore.collection("orders").where("Owner",isEqualTo:  _user.uid).get().then((onValue){
+      //print(onValue.docs.length);
+      for(var value in onValue.docs){
+        if (value.data()["delivered"]==false) {
+          open.addAll({value.id:value.data()});
+        }
+      }
+    });
+    //Hive.box("orders").put("open", open);
+  }
+  // print(open);
+  return open;
+}
+
+Future<Map<String,dynamic>> getClossedOrders()async{
+ Map<String,dynamic> closed ={};
+  await Hive.openBox("orders");
+  if (Hive.box("orders").containsKey("closed")) {
+    return Hive.box("orders").get("closed");
+  }else{
+    await firestore.collection("orders").where("Owner",isEqualTo: _user.uid).get().then((onValue){
+      for(var value in onValue.docs){
+        if (value.data()["delivered"]== true) {
+          closed.addAll({value.id:value.data()});
+        }
+      }
+    });
+    // Hive.box("orders").put("closed", closed);
+  }
+ return closed;
+}

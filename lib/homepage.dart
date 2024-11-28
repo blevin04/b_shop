@@ -314,8 +314,8 @@ Widget home(){
                                 IconButton(
                                   padding:const EdgeInsets.all(0),
                                   onPressed: ()async{
-                                    FirebaseAuth.instance.currentUser ==null?
-                                    showDialog(context: context, builder: (context){
+                                    if(FirebaseAuth.instance.currentUser ==null)
+                                    {showDialog(context: context, builder: (context){
                                       return Dialog(
                                         child: Container(
                                           height: 100,
@@ -349,13 +349,13 @@ Widget home(){
                                           ),
                                         ),
                                       );
-                                    }):
-                                    await addtoCart(conKeys[index], ammountInCart, name,priceN.toDouble());
-                                     cartState((){
+                                    });}else{
                                       ammountInCart++;
+                                      await addtoCart(conKeys[index], ammountInCart, name,priceN.toDouble());
+                                     cartState((){
                                       incart = true;
                                      });
-                                    ;
+                                    }
                                   }, icon:const Icon(Icons.add_shopping_cart,size: 20,)):
                                   InputQty.int(
                                     onQtyChanged: (val)async {
@@ -529,8 +529,8 @@ class _searchState extends State<search> {
                                 IconButton(
                                   padding:const EdgeInsets.all(0),
                                   onPressed: ()async{
-                                    FirebaseAuth.instance.currentUser ==null?
-                                    showDialog(context: context, builder: (context){
+                                    if(FirebaseAuth.instance.currentUser ==null)
+                                    {showDialog(context: context, builder: (context){
                                       return Dialog(
                                         child: Container(
                                           height: 100,
@@ -564,13 +564,15 @@ class _searchState extends State<search> {
                                           ),
                                         ),
                                       );
-                                    }):
+                                    });}else{
+                                      ammountInCart++;
                                     await addtoCart(conKeys[index], ammountInCart, name,priceN.toDouble());
                                      cartState((){
-                                      ammountInCart++;
                                       incart = true;
                                      });
-                                    ;
+                                    }
+                                    
+                                    
                                   }, icon:const Icon(Icons.add_shopping_cart,size: 20,)):
                                   InputQty.int(
                                     onQtyChanged: (val)async {
@@ -664,6 +666,7 @@ class cart extends StatefulWidget {
  bool selectedaddress = false;
  List selectedAddress = [];
  Map<String,dynamic> items = {};
+ ValueNotifier<int> cartView = ValueNotifier(0);
  void openCartbox()async{
  await Hive.openBox("Cart");
  }
@@ -1132,31 +1135,42 @@ class _cartState extends State<cart> {
                     }, 
                     child:const Row(children: [Icon(Icons.add_location_alt_rounded),Text("Add New Adress")],)
                     ),):
-                    ListView.builder(
-                      itemCount: addressBox.length,
-                      shrinkWrap: true,
-                      itemBuilder: (BuildContext context, int index) {
-                        return ListTile(
-                          onTap:(){
-                            // double latitude = addressBox.get(addressBox.keys.toList()[index])[1];
-                            // double longitude = addressBox.get(addressBox.keys.toList()[index])[2];
-                            selectedaddress = true;
-                            selectedAddress=addressBox.get(addressBox.keys.toList()[index]);
+                    StatefulBuilder(
+                      builder: (context,selectAdressState) {
+                        return ListView.builder(
+                          itemCount: addressBox.length,
+                          shrinkWrap: true,
+                          itemBuilder: (BuildContext context, int index) {
+                            return ListTile(
+                              onLongPress: (){
+                                //Edit the Address
+
+                              },
+                              onTap:(){
+                                // double latitude = addressBox.get(addressBox.keys.toList()[index])[1];
+                                // double longitude = addressBox.get(addressBox.keys.toList()[index])[2];
+                                selectedaddress = true;
+                                selectedAddress=addressBox.get(addressBox.keys.toList()[index]);
+                                selectAdressState((){});
+                              },
+                              title: Text("${addressBox.get(addressBox.keys.toList()[index]).first}"),
+                              subtitle: Text(addressBox.get(addressBox.keys.toList()[index]).last),
+                              leading:IconButton(onPressed: (){
+                                //////edit the address name and delete features
+                                
+                              }, icon:selectedAddress==addressBox.get(addressBox.keys.toList()[index])?
+                              const Icon(Icons.check_box):
+                              const Icon(Icons.check_box_outline_blank)),
+                              trailing: IconButton(onPressed: ()async{
+                                ////open the maps app for location preview
+                                double latitude = addressBox.get(addressBox.keys.toList()[index])[1];
+                                double longitude = addressBox.get(addressBox.keys.toList()[index])[2];
+                                await openMap(latitude, longitude, context);
+                              }, icon:const Icon(FontAwesomeIcons.mapLocation)),
+                            );
                           },
-                          title: Text("${addressBox.get(addressBox.keys.toList()[index]).first}"),
-                          subtitle: Text(addressBox.get(addressBox.keys.toList()[index]).last),
-                          leading:IconButton(onPressed: (){
-                            //////edit the address name and delete features
-                            
-                          }, icon:const Icon(Icons.edit)),
-                          trailing: IconButton(onPressed: ()async{
-                            ////open the maps app for location preview
-                            double latitude = addressBox.get(addressBox.keys.toList()[index])[1];
-                            double longitude = addressBox.get(addressBox.keys.toList()[index])[2];
-                            await openMap(latitude, longitude, context);
-                          }, icon:const Icon(FontAwesomeIcons.mapLocation)),
                         );
-                      },
+                      }
                     );
                   }
                 )
@@ -1166,108 +1180,305 @@ class _cartState extends State<cart> {
           ],
         ),
        ),
-        ListenableBuilder(
-          listenable: Hive.box("UserData").listenable(),
-          builder: (context,child) {
-            return FutureBuilder(
-              future: getCart(),
+       ListenableBuilder(
+        listenable: cartView,
+         builder: (context,child) {
+           return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              TextButton(onPressed: (){
+                cartView.value = 0;
+              }, child:Container(
+                padding:const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: cartView.value ==0?
+                  const Color.fromARGB(255, 218, 169, 36):
+                  Colors.transparent
+                ),child:  Text("My Cart",style: TextStyle(
+                  color:cartView.value==0? Colors.white:null,
+                  fontWeight: FontWeight.bold,fontSize: 15),),
+              )),
+              TextButton(onPressed: (){
+                cartView.value = 1;
+              }, child: Container(
+                padding:const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: cartView.value ==1?
+                 const Color.fromARGB(255, 218, 169, 36):
+                  Colors.transparent
+                ),
+                child:  Text(
+                  "Open Orders",
+                  style: TextStyle(
+                    color: cartView.value==1?
+                    Colors.white:
+                    null,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15
+                  ),
+                  ),
+              )),
+              TextButton(onPressed: (){
+                cartView.value = 2;
+              }, child:  Container(
+                padding:const EdgeInsets.all(5),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  color: cartView.value == 2?
+                    const Color.fromARGB(255, 218, 169, 36):
+                    Colors.transparent
+                ),
+                child: Text(
+                  "Closed Orders",style: 
+                  TextStyle(
+                    color: cartView.value==2?
+                    Colors.white:
+                    null,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15
+                  ),
+                  ),
+              )),
+            ],
+           );
+         }
+       ),
+       ListenableBuilder(
+        listenable: cartView,
+        builder: (context,child){
+          return Visibility(
+            visible: cartView.value == 1,
+            child: FutureBuilder(
+              future: getOpenOrders(),
               builder: (BuildContext context, AsyncSnapshot snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if(snapshot.connectionState == ConnectionState.waiting){
                   return const Center(child: CircularProgressIndicator(),);
                 }
-                //print(snapshot.data);
-                Map cart = snapshot.data!;
-                List names = [];
-                List quantities = [];
-                List prices = [];
-                List cartId = [];
-               cart.forEach((key,value){
-                names.add(value.first);
-                quantities.add(value.last);
-                prices.add(value[1]);
-                cartId.add(key);
-                items.addAll({key:[value.first,value[1],value.last]});
-               });
-               
-                return snapshot.data.isNotEmpty? 
-                ListView.builder(
-              itemCount: snapshot.data.length,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (BuildContext context, int index) {
-                return Card(
-                  elevation: 6,
-                  child: SizedBox(
-                    //height: 150,
-                    child:
-                     ListTile(
-                      //minTileHeight: 100,
-                      contentPadding:const EdgeInsets.all(5),
-                     // leading: Image(image:),
-                       title: Text(names[index]),
-                       subtitle: Text("X ${quantities[index]}",softWrap: true,maxLines: 3,overflow: TextOverflow.ellipsis,),
-                      trailing: Column(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          Text("KSH ${(prices[index]*quantities[index])}",style:const TextStyle(fontWeight: FontWeight.bold,fontSize: 16),),
-                          Expanded(child: TextButton(onPressed: ()async{
-                            await removeFromCart(cartId[index]);
-                          }, child:const Text("Remove",style: TextStyle(color: Colors.red,fontWeight:FontWeight.w500,decoration: TextDecoration.underline),))),
-            
-                        ],
-                      ),
-                     )
+                if (snapshot.data.isEmpty) {
+                  return const Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(8.0),
+                      child: Text("No Orders placed"),
                     ),
+                  );
+                }
+                List cartKeys = snapshot.data.keys.toList();
+                return ListView.builder(
+                  itemCount: snapshot.data.length,
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemBuilder: (BuildContext context, int index) {
+                    Map itemsOpen = snapshot.data[cartKeys[index]];
+                    return Card(
+                      child: ListView.builder(
+                        itemCount: itemsOpen["items"].length,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemBuilder: (BuildContext context, int index) {
+                          List itemId = itemsOpen["items"].keys.toList(); 
+                          
+                          List order = itemsOpen["items"][itemId[index]];
+                          // print(order);
+                          return ListTile(
+                            title: Text(order.first),
+                            subtitle: Text("X${order.last}"),
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                Text("${order[1]*order.last}"),
+                                const Text("In transit")
+                              ],
+                            )
+                          );
+                        },
+                      ),
+                    );
+                  },
                 );
               },
-            ):
-           const Center(
-              child: Column(
-                children: [
-                  SizedBox(height: 20,),
-                  Icon(Icons.shopping_cart_sharp),
-                  Text("your Cart is empty"),
-                  SizedBox(height: 20,),
-                ],
+            ),
+          );
+        }),
+        ListenableBuilder(
+          listenable: cartView, 
+          builder: (context,child){
+            return Visibility(
+              visible: cartView.value == 2,
+              child: FutureBuilder(
+                future: getClossedOrders(),
+                builder: (BuildContext context, AsyncSnapshot snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator(),);
+                  }
+                  List cartKeys = snapshot.data.keys.toList();
+                  if (snapshot.data.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(8.0),
+                        child: Text("No Complete deliveries"),
+                      ),
+                    );
+                  }
+                  return ListView.builder(
+                    itemCount: snapshot.data.length,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemBuilder: (BuildContext context, int index) {
+                      Map itemsClosed = snapshot.data[cartKeys[index]];
+                      return Card(
+                        child: ListView.builder(
+                        itemCount: itemsClosed["items"].length,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemBuilder: (BuildContext context, int index) {
+                          List itemId = itemsClosed["items"].keys.toList(); 
+                          
+                          List order = itemsClosed["items"][itemId[index]];
+                          // print(order);
+                          return ListTile(
+                            title: Text(order.first),
+                            subtitle: Text("X${order.last}"),
+                            trailing: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              children: [
+                                Text("${order[1]*order.last}"),
+                                const Text("Delivered on ....")
+                              ],
+                            )
+                          );
+                        },
+                      ),
+                      );
+                    },
+                  );
+                },
               ),
-            )
-            ;
-              },
+            );
+          }),
+        ListenableBuilder(
+          listenable: cartView,
+          builder: (context,child) {
+            return Visibility(
+              visible: cartView.value == 0,
+              child: ListenableBuilder(
+                listenable: Hive.box("UserData").listenable(),
+                builder: (context,child) {
+                  return FutureBuilder(
+                    future: getCart(),
+                    builder: (BuildContext context, AsyncSnapshot snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator(),);
+                      }
+                      //print(snapshot.data);
+                      Map cart = snapshot.data!;
+                      List names = [];
+                      List quantities = [];
+                      List prices = [];
+                      List cartId = [];
+                      print(cart);
+                     cart.forEach((key,value){
+                      names.add(value.first);
+                      quantities.add(value.last);
+                      prices.add(value[1]);
+                      cartId.add(key);
+                      items.addAll({key:[value.first,value[1],value.last]});
+                     });
+                     
+                    return snapshot.data.isNotEmpty? 
+                    ListView.builder(
+                    itemCount: snapshot.data.length,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemBuilder: (BuildContext context, int index) {
+                      return Card(
+                        elevation: 6,
+                        child: Padding(
+                          padding: const EdgeInsets.all(5.0),
+                          child: ListTile(
+                           //minTileHeight: 100,
+                           contentPadding:const EdgeInsets.all(5),
+                          // leading: Image(image:),
+                            title: Text(names[index]),
+                            subtitle: Text("X ${quantities[index]}",softWrap: true,maxLines: 3,overflow: TextOverflow.ellipsis,),
+                           trailing: Column(
+                             mainAxisAlignment: MainAxisAlignment.spaceAround,
+                             children: [
+                               Text("KSH ${(prices[index]*quantities[index])}",style:const TextStyle(fontWeight: FontWeight.bold,fontSize: 16),),
+                               Expanded(child: TextButton(onPressed: ()async{
+                                 await removeFromCart(cartId[index]);
+                               }, child:const Text("Remove",style: TextStyle(color: Colors.red,fontWeight:FontWeight.w500,decoration: TextDecoration.underline),))),
+                                      
+                             ],
+                           ),
+                          ),
+                        ),
+                      );
+                    },
+                  ):
+                 const Center(
+                    child: Column(
+                      children: [
+                        SizedBox(height: 20,),
+                        Icon(Icons.shopping_cart_sharp),
+                        Text("your Cart is empty"),
+                        SizedBox(height: 20,),
+                      ],
+                    ),
+                  )
+                  ;
+                    },
+                  );
+                }
+              ),
             );
           }
         ),
        // const SizedBox(height: 20,),
-        Card(
-          margin:const EdgeInsets.all(20),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(10),
-            onTap: ()async{
-              if (selectedaddress) {
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>Checkout(items: items,location: selectedAddress,)));
-              }else{
-                showsnackbar(context, "Select Address");
-                // await placeOrder(
-                //   items, 
-                //   ["location"], 
-                //   false, 
-                //   5, 
-                //   "0745222065"
-                //   );
-              }
-            },
-            splashColor: const Color.fromARGB(56, 33, 149, 243),
-            enableFeedback: false,
-            child:const Padding(
-              padding:  EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text("Check out"),
-                  Icon(Icons.exit_to_app)
-                ],
+       
+        ListenableBuilder(
+          listenable: cartView,
+          builder: (context,child) {
+            return Visibility(
+              visible: cartView.value == 0,
+              child: Card(
+                margin:const EdgeInsets.all(20),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: ()async{
+                    if (items.isEmpty) {
+                      showsnackbar(context, "Empty Cart");
+                    }
+                    if (selectedaddress && items.isNotEmpty) {
+                      Navigator.push(context, MaterialPageRoute(builder: (context)=>Checkout(items: items,location: selectedAddress,)));
+                    }if(!selectedaddress){
+                      showsnackbar(context, "Select Address");
+                      // await placeOrder(
+                      //   items, 
+                      //   ["location"], 
+                      //   false, 
+                      //   5, 
+                      //   "0745222065"
+                      //   );
+                    }
+                  },
+                  splashColor: const Color.fromARGB(56, 33, 149, 243),
+                  enableFeedback: false,
+                  child:const Padding(
+                    padding:  EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Check out"),
+                        Icon(Icons.exit_to_app)
+                      ],
+                    ),
+                  ),
+                ),
               ),
-            ),
-          ),
+            );
+          }
         )
           ],
         );

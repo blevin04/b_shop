@@ -1,6 +1,5 @@
 import 'package:b_shop/backEndFunctions.dart';
 import 'package:b_shop/utils.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 class Checkout extends StatelessWidget {
   final Map<String,dynamic> items;
@@ -11,8 +10,8 @@ class Checkout extends StatelessWidget {
     TextEditingController number = TextEditingController();
     var total = 0;
     items.forEach((key,value){
-      int price = value[1] as int;
-      total += price;
+      double price = value[1];
+      total += price.round();
     });
     return Scaffold(
       appBar: AppBar(
@@ -41,7 +40,8 @@ class Checkout extends StatelessWidget {
                 Text("KSH ${total.toString()}")
               ],
             ),
-           const Text("Phone Number"),
+            const SizedBox(height: 20,),
+           const Text("Phone Number",textAlign: TextAlign.start,),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
@@ -70,6 +70,37 @@ class Checkout extends StatelessWidget {
               margin:const EdgeInsets.all(20),
               child: InkWell(
                 onTap: ()async{
+                  if (number.text.isEmpty) {
+                    showsnackbar(context, "Enter valid number");
+                    // showDialog(
+                    //   barrierDismissible: false,
+                    //   context: context, builder: (context){
+                    //   return Dialog(
+                    //     child: Container(
+                    //       height: 300,
+                    //       child: Stack(
+                    //         alignment: Alignment.topRight,
+                    //         children: [
+                    //           Center(
+                    //             child: Column(
+                    //               mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    //               children: [
+                    //                 Text("Payment Failed",softWrap: true,style: TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
+                    //                 Icon(Icons.close,size: 50,color: Colors.red,weight: 30,),
+                    //                 Text("Please try again or contact us"),
+
+                    //               ],
+                    //             ),
+                    //           ),
+                    //           IconButton(onPressed: (){
+                    //             Navigator.pop(context);
+                    //           }, icon:const Icon(Icons.cancel))
+                    //         ],
+                    //       ),
+                    //     ),
+                    //   );
+                    // });
+                  }
                   if (number.text.isNotEmpty) {
                     List OrderState = [];
                     //List sold = items.keys.toList();
@@ -79,7 +110,7 @@ class Checkout extends StatelessWidget {
                       items,
                       location, 
                       false, 
-                      total.toDouble(), 
+                      1, 
                       number.text);
                      
                     }
@@ -100,20 +131,28 @@ class Checkout extends StatelessWidget {
                                       return const Center(child: CircularProgressIndicator(),);
                                     }
                                     String paymentState = snapshot.data.data()["PaymentState"];
-                                    return Container(
-                                      height: 400,
-                                      child: Column(
+                                    if (paymentState == "Waiting") {
+                                      return const Column(
                                         mainAxisAlignment: MainAxisAlignment.spaceAround,
                                         children: [
-                                        const Text("Waiting For Payment",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 18),),
-                                        paymentState == "waiting"?
-                                        const Center(child: CircularProgressIndicator(),):
-                                        paymentState == "Success"?
-                                        const Text("Success",style: TextStyle(fontSize: 17,fontWeight: FontWeight.bold),):
-                                        const Text("Error",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 17),)
-                                        // Text("Enter ")
-                                      ],),
-                                    );
+                                          Text("Waiting for Payment Confirmation",softWrap: true,style: TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
+                                          Center(child: CircularProgressIndicator(),)
+                                        ],
+                                      );
+                                    }
+                                    if (paymentState == "Success") {
+                                      return const Center(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                          children: [
+                                            Text("Payment Received",softWrap: true,style: TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
+                                            Icon(Icons.check,size: 50,color: Colors.green,weight: 30,),
+                                            Text("Your Order will be delivered soon"),
+                                          ],
+                                        ),
+                                      );
+                                    }
+                                   return Container();
                                   },
                                 ),
                                 IconButton(onPressed: (){
@@ -128,13 +167,44 @@ class Checkout extends StatelessWidget {
                   }
                 },
                 borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  alignment: Alignment.center,
-                  width: 100,
-                  padding:const EdgeInsets.all(8.0),
-                  child:const Text("Pay"),
+                child: ListenableBuilder(
+                  listenable: number,
+                  builder: (context,child) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: number.text.length==10 ?Colors.blue:null,
+                        borderRadius: BorderRadius.circular(10)
+                      ),
+                      alignment: Alignment.center,
+                      width: 100,
+                      padding:const EdgeInsets.all(8.0),
+                      child:const Text("Pay"),
+                    );
+                  }
                 ),
               ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                TextButton(onPressed: ()async{
+                  List state = [];
+                  while (state.isEmpty) {
+                    showcircleprogress(context);
+                    state = await placeOrder(
+                      items,
+                       location,
+                        true, 
+                        total.toDouble(), 
+                        "",
+                        );
+                  }
+                  Navigator.pop(context);
+                  if (state[0] == "Success") {
+                    showsnackbar(context, "Your order will be delivered soon");
+                  }
+                }, child:const Text("Pay on delivery ?")),
+              ],
             )
           ],
         ),
