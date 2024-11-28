@@ -1,4 +1,8 @@
+import 'dart:typed_data';
+
+import 'package:b_shop/main.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:location/location.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -72,3 +76,36 @@ try {
     }
 }
 
+Future<void> showNotification(String title,String body,Uint8List imagePath)async{
+  try{
+
+    await flutterLocalNotificationsPlugin
+    .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+    ?.requestNotificationsPermission();
+
+
+    AndroidNotificationDetails messageTopreview = 
+  AndroidNotificationDetails(
+    "channelId", 
+    "channelName",
+    importance: Importance.high,
+    priority: Priority.high,
+    styleInformation:imagePath.isNotEmpty? BigPictureStyleInformation(
+      ByteArrayAndroidBitmap(imagePath),
+    ):null,
+    );
+     NotificationDetails platformChannelSpecifics =
+      NotificationDetails(android: messageTopreview);
+  print("daaaaaa");
+      await flutterLocalNotificationsPlugin.show(
+        0, 
+        title,
+         body, 
+         platformChannelSpecifics
+         );
+         print("nice");
+  }catch(e){
+    print(e.toString());
+  }
+   
+}

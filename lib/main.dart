@@ -1,10 +1,17 @@
+import 'dart:typed_data';
+
 import 'package:b_shop/backEndFunctions.dart';
 import 'package:b_shop/firebase_options.dart';
 import 'package:b_shop/homepage.dart';
+import 'package:b_shop/utils.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/adapters.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
+final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+    FlutterLocalNotificationsPlugin();
 void main()async {
     WidgetsFlutterBinding.ensureInitialized();
  await Hive.initFlutter();
@@ -12,6 +19,15 @@ void main()async {
     options: DefaultFirebaseOptions.currentPlatform,
 );
   await Hive.openBox("Theme");
+  // Initialize the plugin
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  const InitializationSettings initializationSettings =
+      InitializationSettings(android: initializationSettingsAndroid);
+
+  await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+  FirebaseMessaging.instance.subscribeToTopic('all');
   runApp(const MyApp());
 }
 
@@ -39,7 +55,15 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     Hive.openBox("Categories");
     Hive.openBox("UserData");
-    
+    FirebaseMessaging.onMessage.listen((onData)async{
+      String title = onData.data["title"];
+      String body = onData.data["body"];
+      Uint8List imagePath = Uint8List(100);
+      await storage.child("/messages/").list().then((value)async{
+        imagePath =(await value.items.single.getData())!;
+      });
+      await showNotification(title, body, imagePath);
+    });
   }
   @override
   Widget build(BuildContext context) {
