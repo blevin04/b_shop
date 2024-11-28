@@ -1,3 +1,4 @@
+import 'package:b_shop/backEndFunctions.dart';
 import 'package:b_shop/firebase_options.dart';
 import 'package:b_shop/homepage.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -38,6 +39,7 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     Hive.openBox("Categories");
     Hive.openBox("UserData");
+    
   }
   @override
   Widget build(BuildContext context) {

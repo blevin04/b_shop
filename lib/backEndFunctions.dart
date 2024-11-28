@@ -261,3 +261,22 @@ Future<Map<String,dynamic>> getClossedOrders()async{
   }
  return closed;
 }
+void setUpListeners()async{
+  List openOrders = [];
+  await firestore.collection("orders").where("Owner",isEqualTo:  _user.uid).get().then((onValue){
+    for(var value in onValue.docs){
+      if(value.data()["delivered"]==false){
+        openOrders.add(value.id);
+      }
+    }
+  });
+  for(var order in openOrders){
+    firestore.collection("orders").doc(order).snapshots().listen((onData)async{
+      bool delivered = onData.data()!["delivered"];
+      if (delivered) {
+        
+      }
+    });
+  }
+  
+}
