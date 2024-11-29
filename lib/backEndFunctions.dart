@@ -14,14 +14,17 @@ FirebaseFirestore firestore = FirebaseFirestore.instance;
 final storage = FirebaseStorage.instance.ref();
 User _user = FirebaseAuth.instance.currentUser!;
 
-Future<Map<String,dynamic>> getFeed()async{
+Future<Map<String,dynamic>> getFeed(String filter)async{
     Map<String,dynamic> feed ={};
-    await firestore.collection("Products").where("Stock",isGreaterThan: 0).get().then((onValue){
+    if (filter.isEmpty || filter == "All") {
+      await firestore.collection("Products").where("Stock",isGreaterThan: 0).get().then((onValue){
         for(var value in onValue.docs){
             final product = {value.id:value.data()};
             feed.addAll(product);
         }
     });
+    }
+    
     return feed;
 }
 Future<List<Uint8List>> getImages(
@@ -46,10 +49,10 @@ void getCategories()async{
         }
      });
    }else{
-    
+    print(categories.values);
    await firestore.collection("Products").where("Category",whereNotIn: categories.values.toList()).orderBy("Clout").get().then((onValue){
    for(var value in onValue.docs){
-    categories.add(value.id);
+    categories.add(value.data()["Category"]);
    }
    });
    }
@@ -163,9 +166,11 @@ Future<String>addtoCart(String itemId,int quantity,String name,double price)asyn
     Box userBox = Hive.box("UserData");
   await firestore.collection("Users").doc(_user.uid).get().then((onValue){
     prevdata = onValue.data()!["Cart"];
+    // print("mmmmmmmmmm");
   });
-  await firestore.collection("Users").doc(itemId).get().then((onValue){
+  await firestore.collection("Products").doc(itemId).get().then((onValue){
     inStock = onValue.data()!["Stock"];
+    // print("nnnnnnnn");
   });
   if (prevdata.containsKey(itemId)) {
     List info = prevdata[itemId];
@@ -232,7 +237,7 @@ Future<List>placeOrder(
       ondelivery: ondelivery,
       price: price,
       paymentNum: paymentnum,
-      live: ondelivery
+      live: ondelivery,
       );
       if (orderValid) {
         await firestore.collection("orders").doc(orderNumber).set(order.toJyson());
@@ -256,7 +261,28 @@ Future<List>placeOrder(
   }
   return state;
 }
+Future<void> clearCart(List items)async{
+  await Hive.openBox("UserData");
+  if (Hive.box("UserData").containsKey("Cart")) {
+    Box cartbox = Hive.box("UserData");
+    for(var item in items){
+      
+      if (cartbox.containsKey(item)) {
+        cartbox.delete(item);
 
+      }
+    }
+  }
+  await firestore.collection("Users").doc(_user.uid).get().then((onValue)async{
+        Map cart = onValue.data()!["Cart"];
+        for(var item in items){
+          if (cart.containsKey(item)) {
+            cart.remove(item);
+          }
+        }
+        await firestore.collection("Users").doc(_user.uid).update({"Cart":cart});
+  });
+}
 Future<Map<String,dynamic>> getOpenOrders()async{
   Map<String,dynamic> open = {};
   await Hive.openBox("orders");

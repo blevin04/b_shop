@@ -1,6 +1,7 @@
 import 'package:b_shop/backEndFunctions.dart';
 import 'package:b_shop/utils.dart';
 import 'package:flutter/material.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 class Checkout extends StatelessWidget {
   final Map<String,dynamic> items;
   final List location;
@@ -126,45 +127,50 @@ class Checkout extends StatelessWidget {
                         barrierDismissible: false,
                         builder: (context){
                           return Dialog(
-                            child: Stack(
-                              alignment: Alignment.topRight,
-                              children: [
-                                StreamBuilder(
-                                  stream: firestore.collection("orders").doc(OrderState.last).snapshots(),
-                                  builder: (BuildContext context, AsyncSnapshot snapshot) {
-                                    if (snapshot.connectionState == ConnectionState.waiting) {
-                                      return const Center(child: CircularProgressIndicator(),);
-                                    }
-                                    String paymentState = snapshot.data.data()["PaymentState"];
-                                    if (paymentState == "Waiting") {
-                                      return const Column(
-                                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                        children: [
-                                          Text("Waiting for Payment Confirmation",softWrap: true,style: TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
-                                          Center(child: CircularProgressIndicator(),)
-                                        ],
-                                      );
-                                    }
-                                    if (paymentState == "Success") {
-                                      return const Center(
-                                        child: Column(
+                            child: Container(
+                              height: 400,
+                              child: Stack(
+                                alignment: Alignment.topRight,
+                                children: [
+                                  StreamBuilder(
+                                    stream: firestore.collection("orders").doc(OrderState.last).snapshots(),
+                                    builder: (BuildContext context, AsyncSnapshot snapshot) {
+                                      if (snapshot.connectionState == ConnectionState.waiting) {
+                                        return const Center(child: CircularProgressIndicator(),);
+                                      }
+                                      String paymentState = snapshot.data.data()["PaymentState"];
+                                      if (paymentState == "Waiting") {
+                                        return const Column(
                                           mainAxisAlignment: MainAxisAlignment.spaceAround,
                                           children: [
-                                            Text("Payment Received",softWrap: true,style: TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
-                                            Icon(Icons.check,size: 50,color: Colors.green,weight: 30,),
-                                            Text("Your Order will be delivered soon"),
+                                            Text("Waiting for Payment Confirmation",softWrap: true,style: TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
+                                            Center(child: CircularProgressIndicator(),)
                                           ],
-                                        ),
-                                      );
-                                    }
-                                   return Container();
-                                  },
-                                ),
-                                IconButton(onPressed: (){
-                                  Navigator.pop(context);
-                                }, icon:const Icon(Icons.cancel)
-                                )
-                              ],
+                                        );
+                                      }
+                                      if (paymentState == "Success") {
+                                        clearCart(items.keys.toList());
+                                        return const Center(
+                                          child: Column(
+                                            mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                            children: [
+                                              Text("Payment Received",softWrap: true,style: TextStyle(fontSize: 17,fontWeight: FontWeight.bold),),
+                                              Icon(Icons.check,size: 50,color: Colors.green,weight: 30,),
+                                              Text("Your Order will be delivered soon"),
+
+                                            ],
+                                          ),
+                                        );
+                                      }
+                                     return Container();
+                                    },
+                                  ),
+                                  IconButton(onPressed: (){
+                                    Navigator.pop(context);
+                                  }, icon:const Icon(Icons.cancel)
+                                  )
+                                ],
+                              ),
                             ),
                           );
                         });
@@ -194,7 +200,12 @@ class Checkout extends StatelessWidget {
               children: [
                 TextButton(onPressed: ()async{
                   List state = [];
-                  while (state.isEmpty) {
+                  String num = "";
+                  if (Hive.box("Userdata").containsKey("Number")) {
+                    num = Hive.box("Userdata").get("Number");
+                  }
+                  
+                   while (state.isEmpty) {
                     showcircleprogress(context);
                     state = await placeOrder(
                       items,
@@ -207,7 +218,9 @@ class Checkout extends StatelessWidget {
                   }
                   Navigator.pop(context);
                   if (state[0] == "Success") {
+                    clearCart(items.keys.toList());
                     showsnackbar(context, "Your order will be delivered soon");
+                    Navigator.pop(context);
                   }
                 }, child:const Text("Pay on delivery ?")),
               ],

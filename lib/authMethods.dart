@@ -6,10 +6,12 @@ class UserModel{
   final String fullName;
   final String email;
   final String Uid;
+  final String number;
   UserModel({
     required this.email,
     required this.fullName,
     required this.Uid,
+    required this.number,
   });
 
   Map<String,dynamic> toJson()=>{
@@ -18,6 +20,7 @@ class UserModel{
     "Cart":{},
     "Uid":Uid,
     "AddressBook":{},
+    "Number":number
   };
 }
 
@@ -32,7 +35,7 @@ class AuthMethods {
     required String email,
     required String password,
     required String fullName,
-    
+    required String number,
   }) async {
     // final root = await getApplicationDocumentsDirectory();
     String res = "Some error occured!";
@@ -50,7 +53,8 @@ class AuthMethods {
         UserModel user = UserModel(
             fullName: fullName,
             email: email,
-            Uid: userId
+            Uid: userId,
+          number: number,
             );
 
         //send data to cloud firestore
@@ -93,4 +97,12 @@ class AuthMethods {
     }
     return res;
   }
+  // Future<String> signinWithPhone({required String number,required String password})async{
+  //   String res = "Error Occured Please try again";
+  //   try {
+  //     await _auth.signInWith
+  //   } catch (e) {
+      
+  //   }
+  // }
 }

@@ -189,12 +189,14 @@ class _HomepageState extends State<Homepage> {
   }
 }
 Widget home(){
+  String filter ="All";
+  ValueNotifier<int> refreshFeed = ValueNotifier(0);
   return SingleChildScrollView(
         child: Column(
           children: [
           const SizedBox(height: 15,),
            SizedBox(
-            height: 30,
+            height: 50,
              child: FutureBuilder(
               future: openboxs(),
                builder: (context,snapshott) {
@@ -207,218 +209,239 @@ Widget home(){
                         width: 60,
                         decoration: BoxDecoration(
                           color: const Color.fromARGB(255, 112, 110, 110),
-
                         ),
                         child:const Text(""),
                       );
                     },
                   );
                 }
-                 return ListView.builder(
-                   itemCount: snapshott.data!.length,
-                   shrinkWrap: true,
-                  // padding: EdgeInsets.all(5),
-                   scrollDirection: Axis.horizontal,
-                   itemBuilder: (BuildContext context, int index) {
-                     return Padding(
-                       padding: const EdgeInsets.only(right: 5.0),
-                       child: Container(
-                        padding:const EdgeInsets.all(4),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: const Color.fromARGB(255, 120, 119, 119)),
-                            borderRadius: BorderRadius.circular(10)
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 10.0,right: 10),
-                            child: Text(snapshott.data![index]),
-                          ),
-                        ),
+                List catego = ["All"];
+                catego.addAll(snapshott.data!);
+                 return StatefulBuilder(
+                   builder: (context,categoState) {
+                     return ListView.builder(
+                       itemCount: catego.length,
+                       shrinkWrap: true,
+                      // padding: EdgeInsets.all(5),
+                       scrollDirection: Axis.horizontal,
+                       itemBuilder: (BuildContext context, int index) {
+                         return Padding(
+                           padding: const EdgeInsets.only(left: 5.0),
+                           child: TextButton(onPressed: (){
+                            if(filter != catego[index]){
+                              refreshFeed.value++;
+                              categoState((){
+                              filter = catego[index];
+                            });
+                            }
+                           }, child:Column(
+                             children: [
+                               Text(catego[index]),
+                               Container(
+                                height: 5,
+                                width: catego[index].length.toDouble()*10,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color:filter==catego[index]? Colors.blue:Colors.transparent
+                                ),
+                               )
+                             ],
+                           )),
+                         );
+                       },
                      );
-                   },
+                   }
                  );
                }
              ),
            ),
            const SizedBox(height: 15,),
-           FutureBuilder(
-            future: getFeed(),
-             builder: (context,feedSnapshot) {
-              if (feedSnapshot.connectionState == ConnectionState.waiting) {
-                return GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                  ),
-                  itemCount: 8,
-                  itemBuilder: (BuildContext context, int index) {
-                    return const Card();
-                  },
-                );
-              }
-               return GridView.builder(
-                shrinkWrap: true,
-                 gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                   crossAxisCount: 2,
-                 ),
-                 itemCount: feedSnapshot.data!.length,
-                 itemBuilder: (BuildContext context, int index) {
-                  // List contentkeys = comDate.keys.toList();
-                  // var price = comDate[contentkeys[index]][1];
-                  // //String name = comDate[contentkeys[index]][0];
-                  List conKeys = feedSnapshot.data!.keys.toList();
-                  String name = feedSnapshot.data![conKeys[index]]["Name"];
-                  int priceN = feedSnapshot.data![conKeys[index]]["Price"].toInt();
-                  Map <String,dynamic> items = {conKeys[index]:[name,priceN,1]};
-                  
-                  int ammountInCart = 0;
-                  bool incart = false;
-                  if ( Hive.box("UserData").containsKey("Cart")) {
-                     Map cart = Hive.box("UserData").get("Cart");
-                     if (cart.containsKey(conKeys[index])) {
-                       incart = true;
-                       ammountInCart = cart[conKeys[index]].last;
-                       //print("bbbbbbbbbbbbbbbbbbb");
-                     }
+           ListenableBuilder(
+            listenable: refreshFeed,
+             builder: (context,child) {
+               return FutureBuilder(
+                future: getFeed(filter),
+                 builder: (context,feedSnapshot) {
+                  if (feedSnapshot.connectionState == ConnectionState.waiting) {
+                    return GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                      ),
+                      itemCount: 8,
+                      itemBuilder: (BuildContext context, int index) {
+                        return const Card();
+                      },
+                    );
                   }
-                   return Card(
-                    elevation: 1,
-                    //color: Colors.transparent,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(child: 
-                        FutureBuilder(
-                          future: getImages(conKeys[index]),
-                          builder: (BuildContext context, AsyncSnapshot snapshot) {
-                            if (snapshot.connectionState == ConnectionState.waiting) {
-                              return Center();
-                            }
-                            //print(snapshot.data.length);
-                            return Center(
-                              child: Image(
-                                image: MemoryImage(snapshot.data.first)
-                                ));
-                          },
-                        ),
-                        ),
-                        Padding(padding:const EdgeInsets.only(top: 5,left: 5,right: 5),
-                        child: Text(name,softWrap: true, 
-                        style:const TextStyle(fontWeight: FontWeight.bold),
-                        maxLines: 2,overflow: TextOverflow.ellipsis,),),
-                         Padding(
-                          padding:const EdgeInsets.only(left: 5,right: 5),
-                           child: Text("KSH $priceN",style:const TextStyle(fontWeight: FontWeight.bold,fontSize: 16),),
-                         ),
-                        StatefulBuilder(
-                          builder: (context,cartState) {
-                            return Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
-                              children: [
-                                !incart?
-                                IconButton(
-                                  padding:const EdgeInsets.all(0),
-                                  onPressed: ()async{
-                                    if(FirebaseAuth.instance.currentUser ==null)
-                                    {showDialog(context: context, builder: (context){
-                                      return Dialog(
-                                        child: Container(
-                                          height: 100,
-                                          width: 200,
-                                          child: Column(
-                                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                            crossAxisAlignment: CrossAxisAlignment.center,
-                                            children: [
-                                             
-                                            const Padding(
-                                               padding:  EdgeInsets.all(8.0),
-                                               child:  Text(
-                                                "Login or register to add items to cart",
-                                                softWrap: true,
-                                                overflow: TextOverflow.ellipsis,
-                                                ),
-                                             ),
-                                              Row(
-                                                mainAxisAlignment: MainAxisAlignment.center,
+                   return GridView.builder(
+                    shrinkWrap: true,
+                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                       crossAxisCount: 2,
+                     ),
+                     itemCount: feedSnapshot.data!.length,
+                     itemBuilder: (BuildContext context, int index) {
+                      // List contentkeys = comDate.keys.toList();
+                      // var price = comDate[contentkeys[index]][1];
+                      // //String name = comDate[contentkeys[index]][0];
+                      List conKeys = feedSnapshot.data!.keys.toList();
+                      String name = feedSnapshot.data![conKeys[index]]["Name"];
+                      int priceN = feedSnapshot.data![conKeys[index]]["Price"].toInt();
+                      Map <String,dynamic> items = {conKeys[index]:[name,priceN,1]};
+                      
+                      int ammountInCart = 0;
+                      bool incart = false;
+                      if ( Hive.box("UserData").containsKey("Cart")) {
+                         Map cart = Hive.box("UserData").get("Cart");
+                         if (cart.containsKey(conKeys[index])) {
+                           incart = true;
+                           ammountInCart = cart[conKeys[index]].last;
+                           //print("bbbbbbbbbbbbbbbbbbb");
+                         }
+                      }
+                       return Card(
+                        elevation: 0,
+                        color: Colors.transparent,
+                        
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: 
+                            FutureBuilder(
+                              future: getImages(conKeys[index]),
+                              builder: (BuildContext context, AsyncSnapshot snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return Center();
+                                }
+                                //print(snapshot.data.length);
+                                return Center(
+                                  child: Image(
+                                    fit: BoxFit.fill,
+                                    image: MemoryImage(snapshot.data.first)
+                                    ));
+                              },
+                            ),
+                            ),
+                            Padding(padding:const EdgeInsets.only(top: 5,left: 5,right: 5),
+                            child: Text(name,softWrap: true, 
+                            style:const TextStyle(fontWeight: FontWeight.bold),
+                            maxLines: 2,overflow: TextOverflow.ellipsis,),),
+                             Padding(
+                              padding:const EdgeInsets.only(left: 5,right: 5),
+                               child: Text("KSH $priceN",style:const TextStyle(fontWeight: FontWeight.bold,fontSize: 16),),
+                             ),
+                            StatefulBuilder(
+                              builder: (context,cartState) {
+                                return Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                  children: [
+                                    !incart?
+                                    IconButton(
+                                      padding:const EdgeInsets.all(0),
+                                      onPressed: ()async{
+                                        if(FirebaseAuth.instance.currentUser ==null)
+                                        {showDialog(context: context, builder: (context){
+                                          return Dialog(
+                                            child: Container(
+                                              height: 100,
+                                              width: 200,
+                                              child: Column(
+                                                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                crossAxisAlignment: CrossAxisAlignment.center,
                                                 children: [
-                                                  TextButton(onPressed: ()async{
-                                                    Navigator.pop(context);
-                                                   await Navigator.push(context, (MaterialPageRoute(builder: (context)=>const Authpage())));
-                                                  }, child:const Text("Ok")),
-                                                  TextButton(onPressed: (){
-                                                    Navigator.pop(context);
-                                                  }, child:const Text("Cancel"))
-                                                ],
-                                              )
-                                            ],
-                                          ),
-                                        ),
-                                      );
-                                    });}else{
-                                      ammountInCart++;
-                                      await addtoCart(conKeys[index], ammountInCart, name,priceN.toDouble());
-                                     cartState((){
-                                      incart = true;
-                                     });
-                                    }
-                                  }, icon:const Icon(Icons.add_shopping_cart,size: 20,)):
-                                  InputQty.int(
-                                    onQtyChanged: (val)async {
-                                    ammountInCart = val;
-                                   await addtoCart(conKeys[index], val, name,priceN.toDouble());
-                                  },
-                                  ),
-                                  TextButton(onPressed: (){
-                                    List locationdata = [];
-                                    showDialog(context: context, builder: (context){
-                                      return Dialog(
-                                        child: Container(
-                                          height: MediaQuery.of(context).size.height/2,
-                                          child: FutureBuilder(
-                                            future: Hive.openBox("AddressBook"),
-                                            builder: (BuildContext context, AsyncSnapshot snapshot) {
-                                              if (snapshot.connectionState == ConnectionState.waiting) {
-                                                return const Center(child: CircularProgressIndicator(),);
-                                              }
-                                              Box addressbox = Hive.box("AddressBook");
-                                              
-                                              return ListView.builder(
-                                                itemCount: addressbox.length,
-                                                shrinkWrap: true,
-                                                itemBuilder: (BuildContext context, int index) {
-                                                  String nameAdress = addressbox.get(addressbox.keys.toList()[index]).first;
-                                                  String other = addressbox.get(addressbox.keys.toList()[index]).last;
-                                                  double latitude = addressbox.get(addressbox.keys.toList()[index])[1];
-                                                  double longitude = addressbox.get(addressbox.keys.toList()[index])[2];
-                                                  return ListTile(
-                                                    onTap: ()async{
-                                                      locationdata = addressbox.get(addressbox.keys.toList()[index]);
-                                                      await Navigator.pushReplacement(context, (MaterialPageRoute(builder: (context)=>Checkout(items: items, location: locationdata))));
-                                                    },
-                                                    title: Text(nameAdress),
-                                                    subtitle: Text(other),
-                                                    trailing: IconButton(onPressed: ()async{
-                                                      await openMap(latitude, longitude, context);
-                                                    }, 
-                                                    icon:const Icon(FontAwesomeIcons.mapLocation)
+                                                 
+                                                const Padding(
+                                                   padding:  EdgeInsets.all(8.0),
+                                                   child:  Text(
+                                                    "Login or register to add items to cart",
+                                                    softWrap: true,
+                                                    overflow: TextOverflow.ellipsis,
                                                     ),
+                                                 ),
+                                                  Row(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      TextButton(onPressed: ()async{
+                                                        Navigator.pop(context);
+                                                       await Navigator.push(context, (MaterialPageRoute(builder: (context)=>const Authpage())));
+                                                      }, child:const Text("Ok")),
+                                                      TextButton(onPressed: (){
+                                                        Navigator.pop(context);
+                                                      }, child:const Text("Cancel"))
+                                                    ],
+                                                  )
+                                                ],
+                                              ),
+                                            ),
+                                          );
+                                        });}else{
+                                          ammountInCart++;
+                                          await addtoCart(conKeys[index], ammountInCart, name,priceN.toDouble());
+                                         cartState((){
+                                          incart = true;
+                                         });
+                                        }
+                                      }, icon:const Icon(Icons.add_shopping_cart,size: 20,)):
+                                      InputQty.int(
+                                        onQtyChanged: (val)async {
+                                        ammountInCart = val;
+                                       await addtoCart(conKeys[index], val, name,priceN.toDouble());
+                                      },
+                                      ),
+                                      TextButton(onPressed: (){
+                                        List locationdata = [];
+                                        showDialog(context: context, builder: (context){
+                                          return Dialog(
+                                            child: Container(
+                                              height: MediaQuery.of(context).size.height/2,
+                                              child: FutureBuilder(
+                                                future: Hive.openBox("AddressBook"),
+                                                builder: (BuildContext context, AsyncSnapshot snapshot) {
+                                                  if (snapshot.connectionState == ConnectionState.waiting) {
+                                                    return const Center(child: CircularProgressIndicator(),);
+                                                  }
+                                                  Box addressbox = Hive.box("AddressBook");
+                                                  
+                                                  return ListView.builder(
+                                                    itemCount: addressbox.length,
+                                                    shrinkWrap: true,
+                                                    itemBuilder: (BuildContext context, int index) {
+                                                      String nameAdress = addressbox.get(addressbox.keys.toList()[index]).first;
+                                                      String other = addressbox.get(addressbox.keys.toList()[index]).last;
+                                                      double latitude = addressbox.get(addressbox.keys.toList()[index])[1];
+                                                      double longitude = addressbox.get(addressbox.keys.toList()[index])[2];
+                                                      return ListTile(
+                                                        onTap: ()async{
+                                                          locationdata = addressbox.get(addressbox.keys.toList()[index]);
+                                                          await Navigator.pushReplacement(context, (MaterialPageRoute(builder: (context)=>Checkout(items: items, location: locationdata))));
+                                                        },
+                                                        title: Text(nameAdress),
+                                                        subtitle: Text(other),
+                                                        trailing: IconButton(onPressed: ()async{
+                                                          await openMap(latitude, longitude, context);
+                                                        }, 
+                                                        icon:const Icon(FontAwesomeIcons.mapLocation)
+                                                        ),
+                                                      );
+                                                    },
                                                   );
                                                 },
-                                              );
-                                            },
-                                          ),
-                                        ),
-                                      );
-                                    });
-                                  }, child:const Text("Buy Now"))
-                              ],
-                            );
-                          }
-                        )
-                      ],
-                    ),
+                                              ),
+                                            ),
+                                          );
+                                        });
+                                      }, child:const Text("Buy Now"))
+                                  ],
+                                );
+                              }
+                            )
+                          ],
+                        ),
+                       );
+                     },
                    );
-                 },
+                 }
                );
              }
            ),
@@ -465,7 +488,7 @@ class _searchState extends State<search> {
             },
           )),
           FutureBuilder(
-            future: getFeed(),
+            future: getFeed(""),
             builder: (BuildContext context, AsyncSnapshot snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator(),);
@@ -497,8 +520,8 @@ class _searchState extends State<search> {
                      }
                   }
                    return Card(
-                    elevation: 1,
-                    //color: Colors.transparent,
+                    elevation: 0,
+                    color: Colors.transparent,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -1160,12 +1183,9 @@ class _cartState extends State<cart> {
                               },
                               title: Text("${addressBox.get(addressBox.keys.toList()[index]).first}"),
                               subtitle: Text(addressBox.get(addressBox.keys.toList()[index]).last),
-                              leading:IconButton(onPressed: (){
-                                //////edit the address name and delete features
-                                
-                              }, icon:selectedAddress==addressBox.get(addressBox.keys.toList()[index])?
+                              leading:selectedAddress==addressBox.get(addressBox.keys.toList()[index])?
                               const Icon(Icons.check_box):
-                              const Icon(Icons.check_box_outline_blank)),
+                              const Icon(Icons.check_box_outline_blank),
                               trailing: IconButton(onPressed: ()async{
                                 ////open the maps app for location preview
                                 double latitude = addressBox.get(addressBox.keys.toList()[index])[1];
@@ -1198,7 +1218,7 @@ class _cartState extends State<cart> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   color: cartView.value ==0?
-                  const Color.fromARGB(255, 218, 169, 36):
+                  const Color.fromARGB(255, 4, 61, 108):
                   Colors.transparent
                 ),child:  Text("My Cart",style: TextStyle(
                   color:cartView.value==0? Colors.white:null,
@@ -1211,7 +1231,7 @@ class _cartState extends State<cart> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   color: cartView.value ==1?
-                 const Color.fromARGB(255, 218, 169, 36):
+                  const Color.fromARGB(255, 4, 61, 108):
                   Colors.transparent
                 ),
                 child:  Text(
@@ -1232,7 +1252,7 @@ class _cartState extends State<cart> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   color: cartView.value == 2?
-                    const Color.fromARGB(255, 218, 169, 36):
+                     const Color.fromARGB(255, 4, 61, 108):
                     Colors.transparent
                 ),
                 child: Text(

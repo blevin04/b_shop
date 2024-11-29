@@ -11,6 +11,7 @@ TextEditingController nameController =TextEditingController();
 TextEditingController emailController =TextEditingController();
 TextEditingController passwordController =TextEditingController();
 TextEditingController confirmController =TextEditingController();
+TextEditingController numberController = TextEditingController();
 
 TextEditingController emailLogin =TextEditingController();
 TextEditingController passwordLogin =TextEditingController();
@@ -84,6 +85,18 @@ Widget regesterPage(BuildContext context){
                 )
               ),
             ),
+          ),Padding(
+            padding: const EdgeInsets.all(10.0),
+            child: TextField(
+              controller: numberController,
+              decoration: InputDecoration(
+                labelText: "Phone number",
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  borderSide:const BorderSide(color:  Color.fromARGB(255, 86, 85, 85))
+                )
+              ),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(10.0),
@@ -93,7 +106,7 @@ Widget regesterPage(BuildContext context){
                 labelText: "Password",
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(10),
-                  borderSide:const BorderSide(color: const Color.fromARGB(255, 86, 85, 85))
+                  borderSide:const BorderSide(color:  Color.fromARGB(255, 86, 85, 85))
                 )
               ),
             ),
@@ -128,29 +141,39 @@ Widget regesterPage(BuildContext context){
               );
             }
           ),
+          
           const SizedBox(height: 50,),
           InkWell(
             onTap: ()async{
               if (nameController.text.isEmpty) {
                 showsnackbar(context, "Enter Valid Name");
               }
-              if (emailController.text.isNotEmpty) {
+              if (emailController.text.isEmpty) {
                 showsnackbar(context, "Enter valid email");
               }
-              
-              String state = "";
+              if (emailController.text.isNotEmpty &&
+                  nameController.text.isNotEmpty &&
+                  numberController.text.isNotEmpty &&
+                  passwordController.text.isNotEmpty &&
+                  passwordController.text == confirmController.text
+                  ) {
+                String state = "";
               while (state.isEmpty) {
                 showcircleprogress(context);
                 state = await AuthMethods().createAccount(
                 email: emailController.text, 
                 password: passwordController.text, 
-                fullName: nameController.text);
+                fullName: nameController.text,
+                number: numberController.text,
+                );
               }
               if (state=="Success") {
                 Navigator.pop(context);
                 Navigator.pop(context);
                 showsnackbar(context, "Welcome ${nameController.text}");
               }
+              }
+              
             },
             borderRadius: BorderRadius.circular(20),
             child: Container(

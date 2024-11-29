@@ -83,12 +83,11 @@ exports.initPayment = functions.firestore.onDocumentCreated(
       }
     },
 );
-
 exports.updateStock = functions.firestore.onDocumentUpdated(
     "orders/{orderId}",
     async (snapshot) => {
       const orderdata = snapshot.data;
-      const items = orderdata.data().items;
+      const items = orderdata.before.data().items;
       const prev = orderdata.before.data().Live;
       const after = orderdata.after.data().Live;
       if (prev == false && after == true) {
