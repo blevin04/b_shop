@@ -111,10 +111,15 @@ class Checkout extends StatelessWidget {
                       location, 
                       false, 
                       1, 
-                      number.text);
+                      number.text,
+                      context,
+                      );
                      
                     }
                     Navigator.pop(context);
+                    if (OrderState.first == "Order Invalid") {
+                      
+                    }
                     if (OrderState.first == "placed") {
                       showDialog(
                         context: context, 
@@ -197,6 +202,7 @@ class Checkout extends StatelessWidget {
                         true, 
                         total.toDouble(), 
                         "",
+                        context,
                         );
                   }
                   Navigator.pop(context);

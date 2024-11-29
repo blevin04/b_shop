@@ -78,12 +78,7 @@ try {
 
 Future<void> showNotification(String title,String body,Uint8List imagePath)async{
   try{
-
-    await flutterLocalNotificationsPlugin
-    .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-    ?.requestNotificationsPermission();
-
-
+    
     AndroidNotificationDetails messageTopreview = 
   AndroidNotificationDetails(
     "channelId", 

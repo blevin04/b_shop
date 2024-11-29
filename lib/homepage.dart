@@ -7,6 +7,7 @@ import 'package:b_shop/utils.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:input_quantity/input_quantity.dart';
@@ -63,6 +64,9 @@ void saveTheme()async{
      await Hive.box("Theme").put("DarkMode", 1);
 }
 Future<List> openboxs()async{
+  await flutterLocalNotificationsPlugin
+    .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+    ?.requestNotificationsPermission();
   await Hive.openBox("Categories");
   List categoriesL = Hive.box("Categories").isEmpty?[]:
   Hive.box("Categories").values.toList();
@@ -266,6 +270,7 @@ Widget home(){
                   String name = feedSnapshot.data![conKeys[index]]["Name"];
                   int priceN = feedSnapshot.data![conKeys[index]]["Price"].toInt();
                   Map <String,dynamic> items = {conKeys[index]:[name,priceN,1]};
+                  
                   int ammountInCart = 0;
                   bool incart = false;
                   if ( Hive.box("UserData").containsKey("Cart")) {

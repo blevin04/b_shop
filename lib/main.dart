@@ -28,6 +28,7 @@ void main()async {
 
   await flutterLocalNotificationsPlugin.initialize(initializationSettings);
   FirebaseMessaging.instance.subscribeToTopic('all');
+  
   runApp(const MyApp());
 }
 
@@ -56,11 +57,15 @@ class _MyAppState extends State<MyApp> {
     Hive.openBox("Categories");
     Hive.openBox("UserData");
     FirebaseMessaging.onMessage.listen((onData)async{
-      String title = onData.data["title"];
-      String body = onData.data["body"];
+      
+      String title = onData.notification!.title!;
+      String body = onData.notification!.body!;
+      String messageId = onData.data["noteid"];
       Uint8List imagePath = Uint8List(100);
-      await storage.child("/messages/").list().then((value)async{
-        imagePath =(await value.items.single.getData())!;
+      await storage.child("/messages/$messageId").list().then((value)async{
+        if (value.items.isNotEmpty) {
+          imagePath =(await value.items.single.getData())!;
+        }
       });
       await showNotification(title, body, imagePath);
     });

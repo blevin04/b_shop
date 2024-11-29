@@ -2,9 +2,11 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:b_shop/models.dart';
+import 'package:b_shop/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
 
@@ -157,13 +159,19 @@ Future<Map<dynamic,dynamic>>getCart()async{
 Future<String>addtoCart(String itemId,int quantity,String name,double price)async{
   String state ="";
   Map prevdata ={};
+  int inStock = 0;
     Box userBox = Hive.box("UserData");
   await firestore.collection("Users").doc(_user.uid).get().then((onValue){
     prevdata = onValue.data()!["Cart"];
   });
+  await firestore.collection("Users").doc(itemId).get().then((onValue){
+    inStock = onValue.data()!["Stock"];
+  });
   if (prevdata.containsKey(itemId)) {
     List info = prevdata[itemId];
-    info.last = quantity;
+    if (quantity <= inStock) {
+      info.last = quantity;
+    }
     prevdata.update(itemId,(value)=>info);
   }else{
     final ddd = <String,dynamic>{itemId:[name,price,quantity]};
@@ -201,10 +209,21 @@ Future<List>placeOrder(
   bool ondelivery,
   double price,
   String paymentnum,
+  BuildContext context,
 )async{
   List state = [];
+  bool orderValid = true;
   try {
     String orderNumber =const Uuid().v1();
+    items.forEach((key,value)async{
+      await firestore.collection("Products").doc(key).get().then((onValue){
+        int inStock = onValue.data()!["Stock"];
+        if (inStock< value.last) {
+          orderValid = false;
+          showsnackbar(context, "Available ${value.first} stock is ${value.last}");
+        }
+      });
+    });
     orderModel order = orderModel(
       items: items, 
       location: location, 
@@ -213,9 +232,24 @@ Future<List>placeOrder(
       ondelivery: ondelivery,
       price: price,
       paymentNum: paymentnum,
+      live: ondelivery
       );
-      await firestore.collection("orders").doc(orderNumber).set(order.toJyson());
-      state.add("placed");
+      if (orderValid) {
+        await firestore.collection("orders").doc(orderNumber).set(order.toJyson());
+        if (ondelivery) {
+          items.forEach((key,value)async{
+            await firestore.collection("Products").doc(key).get().then((onValue)async{
+              int Stock = onValue.data()!["Stock"];
+              int bought = value.last;
+              Stock-=bought;
+              await firestore.collection("Products").doc(key).update({"Stock":Stock});
+            });
+          });
+        }
+        state.add("placed");
+      }else{
+        state.add("Order Invalid");
+      }
       state.add(orderNumber);
   } catch (e) {
     state.add(e.toString());

@@ -53,6 +53,7 @@ exports.initPayment = functions.firestore.onDocumentCreated(
             console.log("Payment processed successfully:", datas);
             await admin.firestore().collection("orders").
                 doc(snapshot.params.orderNum).update({
+                  "Live": true,
                   "PaymentState": "Success",
                   "LipiaOnlineResponse": data,
                 });
@@ -78,6 +79,37 @@ exports.initPayment = functions.firestore.onDocumentCreated(
           //   PaymentState: "failed",
           //   error: error.response.data || error.message,
           // });
+        }
+      }
+    },
+);
+
+exports.updateStock = functions.firestore.onDocumentUpdated(
+    "orders/{orderId}",
+    async (snapshot) => {
+      const orderdata = snapshot.data;
+      const items = orderdata.data().items;
+      const prev = orderdata.before.data().Live;
+      const after = orderdata.after.data().Live;
+      if (prev == false && after == true) {
+        try {
+          if (typeof items == typeof null) {
+            for (const [key, value] of Object.entries(items)) {
+              const productData = await admin.firestore().
+                  collection("Products").
+                  doc(key).get();
+              let stock = productData.data().Stock;
+              const bought = value[2];
+              stock -=bought;
+              await admin.firestore().collection("products").
+                  doc(key).update({
+                    "Stock": stock,
+                  });
+            }
+          }
+          console.log("Successfully updated stock");
+        } catch (error) {
+          console.log("Exception Occured", error);
         }
       }
     },
