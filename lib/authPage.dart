@@ -237,7 +237,7 @@ class login extends StatelessWidget {
                   labelText: "Email",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide:const BorderSide(color: const Color.fromARGB(255, 86, 85, 85))
+                    borderSide:const BorderSide(color:Color.fromARGB(255, 86, 85, 85))
                   )
                 ),
               ),
@@ -251,7 +251,7 @@ class login extends StatelessWidget {
                   labelText: "password",
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
-                    borderSide:const BorderSide(color: const Color.fromARGB(255, 86, 85, 85))
+                    borderSide:const BorderSide(color:Color.fromARGB(255, 86, 85, 85))
                   )
                 ),
               ),

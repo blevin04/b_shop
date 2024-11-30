@@ -1,6 +1,8 @@
 
+import 'package:b_shop/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 class UserModel{
   final String fullName;
@@ -97,12 +99,43 @@ class AuthMethods {
     }
     return res;
   }
-  // Future<String> signinWithPhone({required String number,required String password})async{
-  //   String res = "Error Occured Please try again";
-  //   try {
-  //     await _auth.signInWith
-  //   } catch (e) {
-      
-  //   }
-  // }
+  Future<String> signinWithPhone({required String number,required String password,required BuildContext context})async{
+    String res = "Error Occured Please try again";
+    try {
+      await FirebaseAuth.instance.verifyPhoneNumber(
+      phoneNumber: number,
+      verificationCompleted: (PhoneAuthCredential credential) async{
+        await _auth.signInWithCredential(credential);
+
+      },
+      verificationFailed: (FirebaseAuthException e) {
+        if (e.code == 'invalid-phone-number') {
+          showsnackbar(context, 'The provided phone number is not valid.');
+        }
+      },
+      codeSent: (String verificationId, int? resendToken) async{
+        showDialog(context: context, builder: (context){
+          return Dialog(
+            child: TextField(
+              controller: TextEditingController(),
+              onChanged: (value)async{
+                if (value.length>4) {
+                  // Create a PhoneAuthCredential with the code
+                  PhoneAuthCredential credential = PhoneAuthProvider.credential(verificationId: verificationId, smsCode: value);
+                  // Sign the user in (or link) with the credential
+                  await _auth.signInWithCredential(credential);
+                }
+              },
+            ),
+          );
+        });
+      },
+      codeAutoRetrievalTimeout: (String verificationId) {},
+    );
+    } catch (e) {
+      res = e.toString();
+    }
+    return res;
+  }
+  
 }
