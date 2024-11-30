@@ -1,8 +1,8 @@
-
 import 'package:b_shop/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 
 class UserModel{
   final String fullName;
@@ -99,14 +99,13 @@ class AuthMethods {
     }
     return res;
   }
-  Future<String> signinWithPhone({required String number,required String password,required BuildContext context})async{
+  Future<String> signinWithPhone({required String number,required BuildContext context,required String name})async{
     String res = "Error Occured Please try again";
     try {
       await FirebaseAuth.instance.verifyPhoneNumber(
       phoneNumber: number,
       verificationCompleted: (PhoneAuthCredential credential) async{
         await _auth.signInWithCredential(credential);
-
       },
       verificationFailed: (FirebaseAuthException e) {
         if (e.code == 'invalid-phone-number') {
@@ -116,26 +115,40 @@ class AuthMethods {
       codeSent: (String verificationId, int? resendToken) async{
         showDialog(context: context, builder: (context){
           return Dialog(
-            child: TextField(
-              controller: TextEditingController(),
-              onChanged: (value)async{
-                if (value.length>4) {
-                  // Create a PhoneAuthCredential with the code
-                  PhoneAuthCredential credential = PhoneAuthProvider.credential(verificationId: verificationId, smsCode: value);
-                  // Sign the user in (or link) with the credential
-                  await _auth.signInWithCredential(credential);
-                }
-              },
+            child: Padding(
+              padding: const EdgeInsets.all(10.0),
+              child: TextField(
+                controller: TextEditingController(),
+                onChanged: (value)async{
+                  if (value.length>4) {
+                    // Create a PhoneAuthCredential with the code
+                    PhoneAuthCredential credential = PhoneAuthProvider.credential(verificationId: verificationId, smsCode: value);
+                    // Sign the user in (or link) with the credential
+                    await _auth.signInWithCredential(credential);
+                  // Navigator.pop(context);
+                  }
+                },
+                decoration: InputDecoration(
+                  hintText: "Code received",
+                ),
+              ),
             ),
           );
         });
       },
       codeAutoRetrievalTimeout: (String verificationId) {},
     );
+    res = "Success";
+    
     } catch (e) {
       res = e.toString();
     }
     return res;
   }
   
+  Future<void>logoutA()async{
+  await Hive.box("UserData").clear();
+  await _auth.signOut();
 }
+}
+

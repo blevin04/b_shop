@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:b_shop/authMethods.dart';
 import 'package:b_shop/authPage.dart';
 import 'package:b_shop/backEndFunctions.dart';
 import 'package:b_shop/checkOut.dart';
@@ -115,7 +116,7 @@ class _HomepageState extends State<Homepage> {
             ),
             ListTile(
               onTap: ()async{
-                await FirebaseAuth.instance.signOut();
+                await AuthMethods().logoutA();
               },
               title:const Text("Logout"),
             )
@@ -263,7 +264,7 @@ Widget home(){
                 future: getFeed(filter),
                  builder: (context,feedSnapshot) {
                   if (feedSnapshot.connectionState == ConnectionState.waiting) {
-                    print("............................");
+                    // print("............................");
                     return GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
@@ -288,7 +289,7 @@ Widget home(){
                       // var price = comDate[contentkeys[index]][1];
                       // //String name = comDate[contentkeys[index]][0];
                       List conKeys = feedSnapshot.data!.keys.toList();
-                      print("/////////////////////////");
+                      // print("/////////////////////////");
                       String name = feedSnapshot.data![conKeys[index]]["Name"];
                       int priceN = feedSnapshot.data![conKeys[index]]["Price"].toInt();
                       Map <String,dynamic> items = {conKeys[index]:[name,priceN,1]};
