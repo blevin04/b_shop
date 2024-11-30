@@ -1,3 +1,4 @@
+import 'package:b_shop/backEndFunctions.dart';
 import 'package:b_shop/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -124,7 +125,13 @@ class AuthMethods {
                     // Create a PhoneAuthCredential with the code
                     PhoneAuthCredential credential = PhoneAuthProvider.credential(verificationId: verificationId, smsCode: value);
                     // Sign the user in (or link) with the credential
-                    await _auth.signInWithCredential(credential);
+                    final cred = await _auth.signInWithCredential(credential);
+                    final userId = cred.user?.uid;
+                    UserModel newUser = UserModel(email: "email", fullName: name, Uid: userId!, number: number);
+                    final userd = await firestore.collection("Users").where("Uid",isEqualTo: userId).get();
+                    if (userd.docs.isEmpty) {
+                      await firestore.collection("Users").doc(userId).set(newUser.toJson());
+                    }
                   // Navigator.pop(context);
                   }
                 },
