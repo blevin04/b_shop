@@ -2,6 +2,7 @@ import 'package:b_shop/backEndFunctions.dart';
 import 'package:b_shop/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 
@@ -100,12 +101,13 @@ class AuthMethods {
     }
     return res;
   }
-  Future<String> signinWithPhone({required String number,required BuildContext context,required String name})async{
+  Future<String> signinWithPhone({required String number,required BuildContext context,required String name,required Function(String) codeSent})async{
     String res = "Error Occured Please try again";
     try {
       await FirebaseAuth.instance.verifyPhoneNumber(
       phoneNumber: number,
       verificationCompleted: (PhoneAuthCredential credential) async{
+        res = "Success";
         await _auth.signInWithCredential(credential);
       },
       verificationFailed: (FirebaseAuthException e) {
@@ -114,38 +116,39 @@ class AuthMethods {
         }
       },
       codeSent: (String verificationId, int? resendToken) async{
-        showDialog(context: context, builder: (context){
-          return Dialog(
-            child: Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: TextField(
-                controller: TextEditingController(),
-                onChanged: (value)async{
-                  if (value.length>4) {
-                    // Create a PhoneAuthCredential with the code
-                    PhoneAuthCredential credential = PhoneAuthProvider.credential(verificationId: verificationId, smsCode: value);
-                    // Sign the user in (or link) with the credential
-                    final cred = await _auth.signInWithCredential(credential);
-                    final userId = cred.user?.uid;
-                    UserModel newUser = UserModel(email: "email", fullName: name, Uid: userId!, number: number);
-                    final userd = await firestore.collection("Users").where("Uid",isEqualTo: userId).get();
-                    if (userd.docs.isEmpty) {
-                      await firestore.collection("Users").doc(userId).set(newUser.toJson());
-                    }
-                  // Navigator.pop(context);
-                  }
-                },
-                decoration: InputDecoration(
-                  hintText: "Code received",
-                ),
-              ),
-            ),
-          );
-        });
+        codeSent(verificationId);
+        // showDialog(context: context, builder: (context){
+        //   return Dialog(
+        //     child: Padding(
+        //       padding: const EdgeInsets.all(10.0),
+        //       child: TextField(
+        //         controller: TextEditingController(),
+        //         onChanged: (value)async{
+        //           if (value.length>4) {
+        //             // Create a PhoneAuthCredential with the code
+
+        //             PhoneAuthCredential credential = PhoneAuthProvider.credential(verificationId: verificationId, smsCode: value);
+        //             // Sign the user in (or link) with the credential
+        //             final cred = await _auth.signInWithCredential(credential);
+        //             final userId = cred.user?.uid;
+        //             UserModel newUser = UserModel(email: "email", fullName: name, Uid: userId!, number: number);
+        //             final userd = await firestore.collection("Users").where("Uid",isEqualTo: userId).get();
+        //             if (userd.docs.isEmpty) {
+        //               await firestore.collection("Users").doc(userId).set(newUser.toJson());
+        //             }
+        //           // Navigator.pop(context);
+        //           }
+        //         },
+        //         decoration: InputDecoration(
+        //           hintText: "Code received",
+        //         ),
+        //       ),
+        //     ),
+        //   );
+        // });
       },
       codeAutoRetrievalTimeout: (String verificationId) {},
     );
-    res = "Success";
     
     } catch (e) {
       res = e.toString();
@@ -159,3 +162,12 @@ class AuthMethods {
 }
 }
 
+Future<String> signInWithSmsCode(String verificationId, String smsCode) async { 
+  try {
+    PhoneAuthCredential credential = PhoneAuthProvider.credential( verificationId: verificationId, smsCode: smsCode, );
+   await FirebaseAuth.instance.signInWithCredential(credential);
+   return "Success";
+  } catch (e) {
+    return e.toString();
+  }
+    } 

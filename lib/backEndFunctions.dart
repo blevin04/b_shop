@@ -19,13 +19,20 @@ Future<Map<String,dynamic>> getFeed(String filter)async{
     if (filter.isEmpty || filter == "All") {
       await firestore.collection("Products").where("Stock",isGreaterThan: 0).get().then((onValue){
         for(var value in onValue.docs){
-          print(value.id);
+          // print(value.id);
             final product = {value.id:value.data()};
             feed.addAll(product);
         }
     });
+    }else{
+      await firestore.collection("Products").where("Category",isEqualTo: filter).get().then((onValue){
+        for(var value in onValue.docs){
+          final product = {value.id:value.data()};
+          feed.addAll(product);
+        }
+      });
     }
-    print(feed);
+    // print(feed);
     return feed;
 }
 Future<List<Uint8List>> getImages(

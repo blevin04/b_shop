@@ -208,8 +208,8 @@ Widget home(){
                       return Container(
                         height: 30,
                         width: 60,
-                        decoration: BoxDecoration(
-                          color: const Color.fromARGB(255, 112, 110, 110),
+                        decoration:const BoxDecoration(
+                          color:Color.fromARGB(255, 112, 110, 110),
                         ),
                         child:const Text(""),
                       );

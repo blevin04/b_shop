@@ -14,6 +14,7 @@ TextEditingController passwordController =TextEditingController();
 TextEditingController confirmController =TextEditingController();
 TextEditingController numberController = TextEditingController();
 
+TextEditingController codeController = TextEditingController();
 TextEditingController numberLogin = TextEditingController();
 TextEditingController emailLogin =TextEditingController();
 TextEditingController passwordLogin =TextEditingController();
@@ -32,6 +33,7 @@ class _AuthpageState extends State<Authpage> {
 }
 
 bool useEmail = false;
+String? _verificationId;
 Widget regesterPage(BuildContext context){
   TextStyle onError =const TextStyle(color: Colors.red);
   TextStyle normal = const TextStyle();
@@ -110,6 +112,41 @@ Widget regesterPage(BuildContext context){
                   ),
                 ),
               ),
+              Visibility(child: Container(
+                child: Column(
+                  children: [
+                    Text("Enter code sent to ${numberController.text}"),
+                    Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: TextField(
+                    controller: codeController,
+                    onChanged: (value)async{
+                      if(value.length >=6){
+                        String state ="";
+                        while (state.isEmpty) {
+                          showcircleprogress(context);
+                          state = await signInWithSmsCode(_verificationId!, value);
+                        }
+                       Navigator.pop(context);
+                       if (state == "Success") {
+                         Navigator.pushReplacement(context, (MaterialPageRoute(builder: (context)=>const Homepage())));
+                       }else{
+                        showsnackbar(context, state);
+                       }
+                      }
+                    },
+                    decoration: InputDecoration(
+                      hintText: "XXXXXX",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:const BorderSide(color:  Color.fromARGB(255, 86, 85, 85))
+                      )
+                    ),
+                  ),
+                ),
+                  ],
+                ),
+              )),
               Visibility(
                 visible: useEmail,
                 child: Padding(
@@ -194,7 +231,14 @@ Widget regesterPage(BuildContext context){
                     
                     state = await AuthMethods().signinWithPhone(
                       name: nameController.text,
-                      number: numberController.text, context: context);
+                      number: numberController.text, context: context,
+                      codeSent: (verificationid){
+                        Navigator.pop(context);
+                        setstate((){
+                          _verificationId = verificationid;
+                        });
+                      }
+                      );
                   }
                   if (state=="Success") {
                     Navigator.pop(context);
@@ -306,6 +350,38 @@ class login extends StatelessWidget {
                   ),
                 ),
                 Visibility(
+                  visible: _verificationId!.isNotEmpty,
+                  child: Column(
+                  children: [
+                    Text("Enter code sent to ${numberLogin.text}"),
+                    Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: TextField(
+                      controller: codeController,
+                      onChanged: (value)async{
+                        if (value.length >=6) {
+                          String state = "";
+                          while(state.isEmpty){
+                            showcircleprogress(context);
+                            state = await signInWithSmsCode(_verificationId!, value);
+                          }
+                          if (state == "Success") {
+                            Navigator.pushReplacement(context, (MaterialPageRoute(builder: (context)=>const Homepage())));
+                          }
+                        }
+                      },
+                      decoration: InputDecoration(
+                        labelText: "Phone Number",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                          borderSide:const BorderSide(color:Color.fromARGB(255, 86, 85, 85))
+                        )
+                      ),
+                    ),
+                  ),
+                  ],
+                )),
+                Visibility(
                   visible: !loginWithEmail,
                   child: Column(
                     children: [
@@ -401,12 +477,18 @@ class login extends StatelessWidget {
                         while (state.isEmpty) {
                           // showcircleprogress(context);
 
-                          state = await AuthMethods().signinWithPhone(number: numberLogin.text, context: context, name: "name");
+                          state = await AuthMethods().signinWithPhone(
+                            codeSent: (verificationId){
+                              setstate((){
+                                _verificationId = verificationId;
+                              });
+                            },
+                            number: numberLogin.text, context: context, name: "name");
 
                         }
                         Navigator.pop(context);
-                        print("............................");
-                        print(state);
+                        // print("............................");
+                        // print(state);
                         if (state == "Success") {
                           Navigator.pushAndRemoveUntil(context, (MaterialPageRoute(builder: (context)=>const Homepage())), (route)=>false);
                         }

@@ -93,6 +93,7 @@ exports.updateStock = functions.firestore.onDocumentUpdated(
       if (prev == false && after == true) {
         try {
           if (typeof items == typeof null) {
+            console.log("arrives"); 
             for (const [key, value] of Object.entries(items)) {
               const productData = await admin.firestore().
                   collection("Products").
@@ -103,6 +104,8 @@ exports.updateStock = functions.firestore.onDocumentUpdated(
               await admin.firestore().collection("Products").
                   doc(key).update({
                     "Stock": stock,
+                  }).then((responce) => {
+                    console.log("Update Happened ",responce)
                   });
             }
           }
