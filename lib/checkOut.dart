@@ -1,7 +1,6 @@
 import 'package:b_shop/backEndFunctions.dart';
 import 'package:b_shop/utils.dart';
 import 'package:flutter/material.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 class Checkout extends StatelessWidget {
   final Map<String,dynamic> items;
   final List location;
@@ -115,12 +114,25 @@ class Checkout extends StatelessWidget {
                       number.text,
                       context,
                       );
-                     
+                      // print(OrderState);
                     }
                     Navigator.pop(context);
+                    print(OrderState.length);
                     if (OrderState.first == "Order Invalid") {
-                      
-                    }
+                      Map invalid = OrderState.last;
+                      List invalidKeys = invalid.keys.toList();
+                      showDialog(context: context, builder: (context){
+                        return Dialog(
+                          child: ListView.builder(
+                            itemCount: invalid.length,
+                            itemBuilder: (BuildContext context, int index) {
+                              List invalidOrder = invalid[invalidKeys[index]];
+                              return Text("only ${invalidOrder.last} of ${invalidOrder[1].first} are left instock");
+                            },
+                          ),
+                        );
+                      });
+                    }print(OrderState);
                     if (OrderState.first == "placed") {
                       showDialog(
                         context: context, 
@@ -166,7 +178,7 @@ class Checkout extends StatelessWidget {
                                     },
                                   ),
                                   IconButton(onPressed: (){
-                                    Navigator.pop(context);
+                                    Navigator.popUntil(context,ModalRoute.withName("/cart"));
                                   }, icon:const Icon(Icons.cancel)
                                   )
                                 ],
@@ -200,10 +212,10 @@ class Checkout extends StatelessWidget {
               children: [
                 TextButton(onPressed: ()async{
                   List state = [];
-                  String num = "";
-                  if (Hive.box("Userdata").containsKey("Number")) {
-                    num = Hive.box("Userdata").get("Number");
-                  }
+                  // String num = "";
+                  // if (Hive.box("Userdata").containsKey("Number")) {
+                  //   num = Hive.box("Userdata").get("Number");
+                  // }
                   
                    while (state.isEmpty) {
                     showcircleprogress(context);

@@ -95,6 +95,11 @@ class _MyAppState extends State<MyApp> {
       ),
       themeMode: _themeMode,
       darkTheme: ThemeData.dark(),
+      routes: {
+        "/cart":(context)=> const cart(),
+        "/home":(context)=> const Homepage(),
+        "/search":(context)=> const search(),
+      },
       home: const Homepage(),
     );
   }

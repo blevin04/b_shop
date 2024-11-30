@@ -100,7 +100,7 @@ exports.updateStock = functions.firestore.onDocumentUpdated(
               let stock = productData.data().Stock;
               const bought = value[2];
               stock -=bought;
-              await admin.firestore().collection("products").
+              await admin.firestore().collection("Products").
                   doc(key).update({
                     "Stock": stock,
                   });

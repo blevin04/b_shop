@@ -1,8 +1,8 @@
 
+import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:b_shop/models.dart';
-import 'package:b_shop/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -19,12 +19,13 @@ Future<Map<String,dynamic>> getFeed(String filter)async{
     if (filter.isEmpty || filter == "All") {
       await firestore.collection("Products").where("Stock",isGreaterThan: 0).get().then((onValue){
         for(var value in onValue.docs){
+          print(value.id);
             final product = {value.id:value.data()};
             feed.addAll(product);
         }
     });
     }
-    
+    print(feed);
     return feed;
 }
 Future<List<Uint8List>> getImages(
@@ -220,16 +221,29 @@ Future<List>placeOrder(
   bool orderValid = true;
   try {
     String orderNumber =const Uuid().v1();
-    items.forEach((key,value)async{
+    Map onfail = {};
+    Future<void> check()async{
+      final completer = Completer<void>();
+      items.forEach((key,value)async{
       await firestore.collection("Products").doc(key).get().then((onValue){
         int inStock = onValue.data()!["Stock"];
         if (inStock< value.last) {
           orderValid = false;
-          showsnackbar(context, "Available ${value.first} stock is ${value.last}");
+          print("mmmmmmmmmm");
+          // showsnackbar(context, "Available ${value.first} stock is ${value.last}");
+          onfail.addAll({key:[value,inStock]});
         }
       });
+      if (key == items.keys.last) {
+        completer.complete();
+      }
     });
-    orderModel order = orderModel(
+    return completer.future;
+    }
+      await check().then((onValue)async{
+        if (orderValid) {
+        print(",,,,,,,,,,,,,,,,,,,,");
+        orderModel order = orderModel(
       items: items, 
       location: location, 
       orderNumber: orderNumber, 
@@ -239,7 +253,6 @@ Future<List>placeOrder(
       paymentNum: paymentnum,
       live: ondelivery,
       );
-      if (orderValid) {
         await firestore.collection("orders").doc(orderNumber).set(order.toJyson());
         if (ondelivery) {
           items.forEach((key,value)async{
@@ -247,18 +260,27 @@ Future<List>placeOrder(
               int Stock = onValue.data()!["Stock"];
               int bought = value.last;
               Stock-=bought;
+              if (Stock <0) {
+                Stock = 0;
+              }
               await firestore.collection("Products").doc(key).update({"Stock":Stock});
             });
           });
         }
         state.add("placed");
+        state.add(orderNumber);
       }else{
+        print(";;;;;;");
         state.add("Order Invalid");
+        state.add(onfail);
       }
-      state.add(orderNumber);
+      });
+      
+      
   } catch (e) {
     state.add(e.toString());
   }
+  // print(state);
   return state;
 }
 Future<void> clearCart(List items)async{
