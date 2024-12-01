@@ -33,7 +33,7 @@ class _AuthpageState extends State<Authpage> {
 }
 
 bool useEmail = false;
-String? _verificationId;
+String _verificationId = "";
 Widget regesterPage(BuildContext context){
   TextStyle onError =const TextStyle(color: Colors.red);
   TextStyle normal = const TextStyle();
@@ -67,16 +67,19 @@ Widget regesterPage(BuildContext context){
                 ),
               ),
               const SizedBox(height: 20,),
-              Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: TextField(
-                  controller: nameController,
-                  decoration: InputDecoration(
-                    labelText: "Name",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide:const BorderSide(color: const Color.fromARGB(255, 86, 85, 85))
-                    )
+              Visibility(
+                visible: _verificationId.isEmpty,
+                child: Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: TextField(
+                    controller: nameController,
+                    decoration: InputDecoration(
+                      labelText: "Name",
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide:const BorderSide(color: Color.fromARGB(255, 86, 85, 85))
+                      )
+                    ),
                   ),
                 ),
               ),
@@ -97,7 +100,7 @@ Widget regesterPage(BuildContext context){
                 ),
               ),
               Visibility(
-                visible: !useEmail,
+                visible: !useEmail&&_verificationId.isEmpty,
                 child: Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: TextField(
@@ -112,7 +115,9 @@ Widget regesterPage(BuildContext context){
                   ),
                 ),
               ),
-              Visibility(child: Container(
+              Visibility(
+                visible: _verificationId.isNotEmpty,
+                child: Container(
                 child: Column(
                   children: [
                     Text("Enter code sent to ${numberController.text}"),
@@ -125,7 +130,7 @@ Widget regesterPage(BuildContext context){
                         String state ="";
                         while (state.isEmpty) {
                           showcircleprogress(context);
-                          state = await signInWithSmsCode(_verificationId!, value);
+                          state = await signInWithSmsCode(_verificationId, value,nameController.text,numberController.text);
                         }
                        Navigator.pop(context);
                        if (state == "Success") {
@@ -350,7 +355,7 @@ class login extends StatelessWidget {
                   ),
                 ),
                 Visibility(
-                  visible: _verificationId!.isNotEmpty,
+                  visible: _verificationId.isNotEmpty,
                   child: Column(
                   children: [
                     Text("Enter code sent to ${numberLogin.text}"),
@@ -363,7 +368,7 @@ class login extends StatelessWidget {
                           String state = "";
                           while(state.isEmpty){
                             showcircleprogress(context);
-                            state = await signInWithSmsCode(_verificationId!, value);
+                            state = await signInWithSmsCode(_verificationId, value);
                           }
                           if (state == "Success") {
                             Navigator.pushReplacement(context, (MaterialPageRoute(builder: (context)=>const Homepage())));

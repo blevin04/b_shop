@@ -2,19 +2,18 @@ import 'package:b_shop/backEndFunctions.dart';
 import 'package:b_shop/utils.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 
 class UserModel{
   final String fullName;
   final String email;
-  final String Uid;
+  final String uid;
   final String number;
   UserModel({
     required this.email,
     required this.fullName,
-    required this.Uid,
+    required this.uid,
     required this.number,
   });
 
@@ -22,7 +21,7 @@ class UserModel{
     "Name":fullName,
     "Email":email,
     "Cart":{},
-    "Uid":Uid,
+    "Uid":uid,
     "AddressBook":{},
     "Number":number
   };
@@ -57,7 +56,7 @@ class AuthMethods {
         UserModel user = UserModel(
             fullName: fullName,
             email: email,
-            Uid: userId,
+            uid: userId,
           number: number,
             );
 
@@ -162,10 +161,17 @@ class AuthMethods {
 }
 }
 
-Future<String> signInWithSmsCode(String verificationId, String smsCode) async { 
+Future<String> signInWithSmsCode(String verificationId, String smsCode,[String name = "name",String number = "num"]) async { 
   try {
     PhoneAuthCredential credential = PhoneAuthProvider.credential( verificationId: verificationId, smsCode: smsCode, );
-   await FirebaseAuth.instance.signInWithCredential(credential);
+   final userCred = await FirebaseAuth.instance.signInWithCredential(credential);
+   await firestore.collection("Users").where("uid",isEqualTo: userCred.user!.uid).get().then((onValue)async{
+    if (onValue.docs.isEmpty) {
+      // print("EmptyMf,,,,,,,,,,,,,,,,,,,,,,,,,,");
+      UserModel userModel = UserModel(email: "email", fullName: name, uid: userCred.user!.uid, number: number);
+      await firestore.collection("Users").doc(userCred.user!.uid).set(userModel.toJson());
+    }
+   });
    return "Success";
   } catch (e) {
     return e.toString();
