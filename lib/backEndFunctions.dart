@@ -25,7 +25,7 @@ Future<Map<String,dynamic>> getFeed(String filter)async{
         }
     });
     }else{
-      await firestore.collection("Products").where("Category",isEqualTo: filter).get().then((onValue){
+      await firestore.collection("Products").where("Category",isEqualTo: filter).where("Stock",isGreaterThan: 0).get().then((onValue){
         for(var value in onValue.docs){
           final product = {value.id:value.data()};
           feed.addAll(product);
@@ -50,6 +50,7 @@ Future<List<Uint8List>> getImages(
 void getCategories()async{
     await Hive.openBox("Categories");
    var categories= Hive.box("Categories");
+  //  categories.clear();
    if (categories.isEmpty) {
     await firestore.collection("Products").where("Category",isNotEqualTo: null).get().then((onValue){
         for(var val in onValue.docs){
@@ -60,7 +61,10 @@ void getCategories()async{
     print(categories.values);
    await firestore.collection("Products").where("Category",whereNotIn: categories.values.toList()).orderBy("Clout").get().then((onValue){
    for(var value in onValue.docs){
-    categories.add(value.data()["Category"]);
+    if (!categories.toMap().containsValue(value.data()["Category"])) {
+      categories.add(value.data()["Category"]);
+    }
+    
    }
    });
    }

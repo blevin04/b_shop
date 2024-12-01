@@ -14,7 +14,7 @@ const admin = require("firebase-admin");
 // const {response} = require("express");
 // const axios = require("axios");
 admin.initializeApp();
-const LIPIA_API_KEY ="7acd8e1c198313db8169389635ddaa1a52d7b095";
+const LIPIA_API_KEY ="0f70258e0562d0b0ef88e995d81bdc1efc3e0727";
 exports.initPayment = functions.firestore.onDocumentCreated(
     "orders/{orderNum}/",
     async (snapshot) => {
@@ -93,7 +93,7 @@ exports.updateStock = functions.firestore.onDocumentUpdated(
       if (prev == false && after == true) {
         try {
           if (typeof items == typeof null) {
-            console.log("arrives"); 
+            console.log("arrives");
             for (const [key, value] of Object.entries(items)) {
               const productData = await admin.firestore().
                   collection("Products").
@@ -105,7 +105,7 @@ exports.updateStock = functions.firestore.onDocumentUpdated(
                   doc(key).update({
                     "Stock": stock,
                   }).then((responce) => {
-                    console.log("Update Happened ",responce)
+                    console.log("Update Happened ", responce);
                   });
             }
           }

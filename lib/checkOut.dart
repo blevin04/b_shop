@@ -1,4 +1,5 @@
 import 'package:b_shop/backEndFunctions.dart';
+import 'package:b_shop/homepage.dart';
 import 'package:b_shop/utils.dart';
 import 'package:flutter/material.dart';
 class Checkout extends StatelessWidget {
@@ -178,7 +179,7 @@ class Checkout extends StatelessWidget {
                                     },
                                   ),
                                   IconButton(onPressed: (){
-                                    Navigator.popUntil(context,ModalRoute.withName("/cart"));
+                                    Navigator.pushAndRemoveUntil(context, (MaterialPageRoute(builder: (context)=> const Homepage())), (route)=>false);
                                   }, icon:const Icon(Icons.cancel)
                                   )
                                 ],

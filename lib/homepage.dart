@@ -77,7 +77,6 @@ class _HomepageState extends State<Homepage> {
   @override
   void initState() {
     super.initState();
-   
     getCategories();
   }
   @override
@@ -111,14 +110,19 @@ class _HomepageState extends State<Homepage> {
                         },
                       ),
                 ),
-           const ListTile(
-              title: Text("Feedback"),
+            ListTile(
+              title: const Text("Feedback"),
+              onTap: (){
+                showsnackbar(context, "Coming soon");
+              },
             ),
             ListTile(
               onTap: ()async{
+                FirebaseAuth.instance.currentUser == null?
+                Navigator.push(context,MaterialPageRoute(builder: (context)=>const Authpage())):
                 await AuthMethods().logoutA();
               },
-              title:const Text("Logout"),
+              title:FirebaseAuth.instance.currentUser == null?const Text("LogIn"):const Text("LogOut"),
             )
 
           ],
@@ -277,7 +281,10 @@ Widget home(){
                       },
                     );
                   }
-                  print(feedSnapshot.data);
+                  // print(feedSnapshot.data);
+                  if (feedSnapshot.data!.isEmpty) {
+                    return const Center(child: Text("All items in this category are sold-out"),);
+                  }
                    return GridView.builder(
                     shrinkWrap: true,
                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
