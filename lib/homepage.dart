@@ -69,8 +69,15 @@ Future<List> openboxs()async{
     .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
     ?.requestNotificationsPermission();
   await Hive.openBox("Categories");
-  List categoriesL = Hive.box("Categories").isEmpty?[]:
-  Hive.box("Categories").values.toList();
+  List categoriesL =[];
+
+   if(Hive.box("Categories").isEmpty){
+    await getCategories();
+    categoriesL = Hive.box("Categories").values.toList();
+   }else{
+    categoriesL = Hive.box("Categories").values.toList();
+   }
+  
   return categoriesL;
 }
 class _HomepageState extends State<Homepage> {

@@ -477,7 +477,7 @@ class login extends StatelessWidget {
                       }
                       }
                       if (!loginWithEmail && numberLogin.text.isNotEmpty) {
-                        print("shit");
+                        // print("shit");
                         String state = "";
                         while (state.isEmpty) {
                           // showcircleprogress(context);
@@ -494,9 +494,9 @@ class login extends StatelessWidget {
                         Navigator.pop(context);
                         // print("............................");
                         // print(state);
-                        if (state == "Success") {
-                          Navigator.pushAndRemoveUntil(context, (MaterialPageRoute(builder: (context)=>const Homepage())), (route)=>false);
-                        }
+                        // if (state == "Success") {
+                        //   // Navigator.pushAndRemoveUntil(context, (MaterialPageRoute(builder: (context)=>const Homepage())), (route)=>false);
+                        // }
                       }
                     },
                     borderRadius: BorderRadius.circular(20),

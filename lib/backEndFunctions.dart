@@ -47,7 +47,7 @@ Future<List<Uint8List>> getImages(
     });
     return productImages;
 }
-void getCategories()async{
+Future getCategories()async{
     await Hive.openBox("Categories");
    var categories= Hive.box("Categories");
   //  categories.clear();
@@ -64,7 +64,6 @@ void getCategories()async{
     if (!categories.toMap().containsValue(value.data()["Category"])) {
       categories.add(value.data()["Category"]);
     }
-    
    }
    });
    }
