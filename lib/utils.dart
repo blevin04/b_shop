@@ -91,14 +91,14 @@ Future<void> showNotification(String title,String body,Uint8List imagePath)async
     );
      NotificationDetails platformChannelSpecifics =
       NotificationDetails(android: messageTopreview);
-  print("daaaaaa");
+  // print("daaaaaa");
       await flutterLocalNotificationsPlugin.show(
         0, 
         title,
          body, 
          platformChannelSpecifics
          );
-         print("nice");
+        //  print("nice");
   }catch(e){
     print(e.toString());
   }

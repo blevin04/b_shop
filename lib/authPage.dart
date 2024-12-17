@@ -376,7 +376,7 @@ class login extends StatelessWidget {
                         }
                       },
                       decoration: InputDecoration(
-                        labelText: "Phone Number",
+                        labelText: "******",
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(10),
                           borderSide:const BorderSide(color:Color.fromARGB(255, 86, 85, 85))
@@ -455,60 +455,63 @@ class login extends StatelessWidget {
                   }, child:const Text("Log in with phone number")),
                 ),
                 const SizedBox(height: 30,),
-                Center(
-                  child: InkWell(
-                    onTap: ()async{
-                      if (emailLogin.text.isEmpty&& loginWithEmail) {
-                        showsnackbar(context, "Enter Valid email");
-                      }
-                      if (passwordLogin.text.isEmpty && loginWithEmail) {
-                        showsnackbar(context, "Enter password");
-                      }
-                      if (passwordLogin.text.isNotEmpty&&emailLogin.text.isNotEmpty && loginWithEmail) {
-                        String state ="";
-                      while (state.isEmpty) {
-                        showcircleprogress(context);
-                        state = await AuthMethods().signIn(email: emailLogin.text, password: passwordLogin.text);
-                      }
-                      if (state == "Success") {
-                        Navigator.pop(context);
-                        Navigator.pop(context);
-                        showsnackbar(context, "Welcome Back ");
-                      }
-                      }
-                      if (!loginWithEmail && numberLogin.text.isNotEmpty) {
-                        // print("shit");
-                        String state = "";
-                        while (state.isEmpty) {
-                          // showcircleprogress(context);
-
-                          state = await AuthMethods().signinWithPhone(
-                            codeSent: (verificationId){
-                              setstate((){
-                                _verificationId = verificationId;
-                              });
-                            },
-                            number: numberLogin.text, context: context, name: "name");
-
+                Visibility(
+                  visible:_verificationId.isEmpty,
+                  child: Center(
+                    child: InkWell(
+                      onTap: ()async{
+                        if (emailLogin.text.isEmpty&& loginWithEmail) {
+                          showsnackbar(context, "Enter Valid email");
                         }
-                        Navigator.pop(context);
-                        // print("............................");
-                        // print(state);
-                        // if (state == "Success") {
-                        //   // Navigator.pushAndRemoveUntil(context, (MaterialPageRoute(builder: (context)=>const Homepage())), (route)=>false);
-                        // }
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(20),
-                    child: Container(
-                      alignment: Alignment.center,
-                      width: MediaQuery.of(context).size.width/2,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        color: const Color.fromARGB(255, 22, 45, 23),
+                        if (passwordLogin.text.isEmpty && loginWithEmail) {
+                          showsnackbar(context, "Enter password");
+                        }
+                        if (passwordLogin.text.isNotEmpty&&emailLogin.text.isNotEmpty && loginWithEmail) {
+                          String state ="";
+                        while (state.isEmpty) {
+                          showcircleprogress(context);
+                          state = await AuthMethods().signIn(email: emailLogin.text, password: passwordLogin.text);
+                        }
+                        if (state == "Success") {
+                          Navigator.pop(context);
+                          Navigator.pop(context);
+                          showsnackbar(context, "Welcome Back ");
+                        }
+                        }
+                        if (!loginWithEmail && numberLogin.text.isNotEmpty) {
+                          // print("shit");
+                          String state = "";
+                          while (state.isEmpty) {
+                            // showcircleprogress(context);
+                  
+                            state = await AuthMethods().signinWithPhone(
+                              codeSent: (verificationId){
+                                setstate((){
+                                  _verificationId = verificationId;
+                                });
+                              },
+                              number: numberLogin.text, context: context, name: "name");
+                  
+                          }
+                          // Navigator.pop(context);
+                          // print("............................");
+                          // print(state);
+                          // if (state == "Success") {
+                          //   // Navigator.pushAndRemoveUntil(context, (MaterialPageRoute(builder: (context)=>const Homepage())), (route)=>false);
+                          // }
+                        }
+                      },
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        alignment: Alignment.center,
+                        width: MediaQuery.of(context).size.width/2,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          color: const Color.fromARGB(255, 22, 45, 23),
+                        ),
+                        child:const Text("Login",style: TextStyle(fontSize: 22,color: Colors.white),),
                       ),
-                      child:const Text("Login",style: TextStyle(fontSize: 22,color: Colors.white),),
                     ),
                   ),
                 ),

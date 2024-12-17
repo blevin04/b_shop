@@ -129,7 +129,17 @@ class _HomepageState extends State<Homepage> {
                 Navigator.push(context,MaterialPageRoute(builder: (context)=>const Authpage())):
                 await AuthMethods().logoutA();
               },
-              title:FirebaseAuth.instance.currentUser == null?const Text("LogIn"):const Text("LogOut"),
+              title:
+              StreamBuilder(
+                stream: FirebaseAuth.instance.authStateChanges(),
+                builder: (BuildContext context, AsyncSnapshot snapshot) {
+                  if (snapshot.hasData) {
+                    return const Text("LogOut");
+                  }
+                  return const Text("Login");
+                },
+              ),
+              // FirebaseAuth.instance.currentUser == null?const Text("LogIn"):const Text("LogOut"),
             )
 
           ],
