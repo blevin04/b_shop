@@ -73,11 +73,20 @@ Future<List> openboxs()async{
 
    if(Hive.box("Categories").isEmpty){
     await getCategories();
-    categoriesL = Hive.box("Categories").values.toList();
+    Hive.box("Categories").values.toList().forEach((value){
+      if (!categoriesL.contains(value)) {
+        categoriesL.add(value);
+      }
+    });
+    // categoriesL = Hive.box("Categories").values.toList();
    }else{
-    categoriesL = Hive.box("Categories").values.toList();
+    Hive.box("Categories").values.toList().forEach((value){
+      if (!categoriesL.contains(value)) {
+        categoriesL.add(value);
+      }
+    });
+    // categoriesL = Hive.box("Categories").values.toList();
    }
-  
   return categoriesL;
 }
 class _HomepageState extends State<Homepage> {
@@ -225,8 +234,10 @@ Widget home(){
                 if (snapshott.connectionState == ConnectionState.waiting) {
                   return  ListView.builder(
                     itemCount: 5,
+                    
                     itemBuilder: (BuildContext context, int index) {
                       return Container(
+                        margin:const EdgeInsets.only(left: 20),
                         height: 30,
                         width: 60,
                         decoration:const BoxDecoration(

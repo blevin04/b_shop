@@ -58,7 +58,7 @@ Future getCategories()async{
         }
      });
    }else{
-    print(categories.values);
+    // print(categories.values);
    await firestore.collection("Products").where("Category",whereNotIn: categories.values.toList()).orderBy("Clout").get().then((onValue){
    for(var value in onValue.docs){
     if (!categories.toMap().containsValue(value.data()["Category"])) {
@@ -66,6 +66,14 @@ Future getCategories()async{
     }
    }
    });
+   List actualCat = [];
+   for(var cat in categories.values.toList()){
+    if (!actualCat.contains(cat)) {
+      actualCat.add(cat);
+    }
+   }
+   categories.clear();
+   categories.addAll(actualCat);
    }
 }
 Future<Map<dynamic,dynamic>> getUser()async{

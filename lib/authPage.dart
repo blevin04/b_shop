@@ -483,7 +483,6 @@ class login extends StatelessWidget {
                           String state = "";
                           while (state.isEmpty) {
                             // showcircleprogress(context);
-                  
                             state = await AuthMethods().signinWithPhone(
                               codeSent: (verificationId){
                                 setstate((){
