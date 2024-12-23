@@ -13,8 +13,8 @@ showsnackbar(BuildContext context, String content) {
 }
 
 showcircleprogress(BuildContext context) {
-
   showDialog(
+    barrierDismissible: false,
       context: context,
       builder: (BuildContext context) {
         return   StatefulBuilder(
